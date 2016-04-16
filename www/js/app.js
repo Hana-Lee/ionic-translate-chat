@@ -7,7 +7,7 @@
 // 'starter.controllers' is found in controllers.js
 angular.module('starter', ['ionic', 'starter.controllers', 'starter.services'])
 
-  .run(function ($ionicPlatform) {
+  .run(function ($ionicPlatform, $state) {
     $ionicPlatform.ready(function () {
       // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
       // for form inputs)
@@ -23,7 +23,11 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.services'])
     });
   })
 
-  .config(function ($stateProvider, $urlRouterProvider) {
+  .config(function ($stateProvider, $urlRouterProvider, $ionicConfigProvider) {
+
+    if (ionic.Platform.isIOS()) {
+      $ionicConfigProvider.scrolling.jsScrolling(true);
+    }
 
     // Ionic uses AngularUI Router which uses the concept of states
     // Learn more here: https://github.com/angular-ui/ui-router
