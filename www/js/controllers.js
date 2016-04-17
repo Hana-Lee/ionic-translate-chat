@@ -95,7 +95,11 @@ angular.module('starter.controllers', ['monospaced.elastic', 'angularMoment'])
           e.preventDefault();
           e.stopPropagation();
 
-          $scope.sendMessage();
+          if (txtInput.val().replace(/\s+/g, '') !== '') {
+            $scope.sendMessage();
+          } else {
+            txtInput.val('');
+          }
         }
       }
 
