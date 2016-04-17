@@ -52,17 +52,28 @@ angular.module('starter.controllers', ['monospaced.elastic', 'angularMoment'])
       var scroller;
       var txtInput; // ^^^
       var tabNavi;
+      var $tabNavi;
       var tabNaviHeight = 0;
       var keyboardHeight = 0;
+      var isAndroid = ionic.Platform.isAndroid();
 
       // TODO 입력 버튼 제거, 키보드의 엔터로 메세지 입력되게 변경하여 키보드 show, hide 문제 해결하기
       function keyboardShowHandler(e) {
         console.log('keyboardShowHandler');
         keyboardHeight = e.keyboardHeight;
-        tabNaviHeight = 0;
+
+        if (!isAndroid) {
+          tabNaviHeight = 0;
+        }
+
+        $rootScope.hideTabs = true;
 
         $timeout(function() {
-          scroller.style.bottom = footerBar.clientHeight + keyboardHeight + 'px';
+          if (isAndroid) {
+            scroller.style.bottom = footerBar.clientHeight + tabNaviHeight + 'px';
+          } else {
+            scroller.style.bottom = footerBar.clientHeight + keyboardHeight + 'px';
+          }
           viewScroll.scrollBottom(false);
         }, 0);
       }
@@ -76,6 +87,16 @@ angular.module('starter.controllers', ['monospaced.elastic', 'angularMoment'])
           scroller.style.bottom = footerBar.clientHeight + tabNaviHeight + 'px';
           viewScroll.scrollBottom(false);
         }, 0);
+      }
+
+      function keydownHandler(e) {
+        console.log('key down handler', e.keyCode);
+        if (e.keyCode === 13) {
+          e.preventDefault();
+          e.stopPropagation();
+
+          $scope.sendMessage();
+        }
       }
 
       $scope.$on('$ionicView.enter', function () {
@@ -95,6 +116,10 @@ angular.module('starter.controllers', ['monospaced.elastic', 'angularMoment'])
           scroller = document.body.querySelector('#userMessagesView .scroll-content');
           txtInput = angular.element(footerBar.querySelector('textarea'));
           tabNavi = document.body.querySelector('.tab-nav');
+          $tabNavi = angular.element(tabNavi);
+          tabNaviHeight = tabNavi.offsetHeight;
+
+          txtInput.on('keydown', keydownHandler);
         }, 0);
 
         messageCheckTimer = $interval(function () {
@@ -140,7 +165,7 @@ angular.module('starter.controllers', ['monospaced.elastic', 'angularMoment'])
       }
 
       $scope.$watch('input.message', function (newValue, oldValue) {
-        console.log('input.message $watch, newValue ' + newValue);
+        console.log('input.message $watch, newValue "' + newValue + '"', arguments);
         if (!newValue) {
           newValue = '';
         }
@@ -156,7 +181,9 @@ angular.module('starter.controllers', ['monospaced.elastic', 'angularMoment'])
         // if you do a web service call this will be needed as well as before the viewScroll calls
         // you can't see the effect of this in the browser it needs to be used on a real device
         // for some reason the one time blur event is not firing in the browser but does on devices
-        keepKeyboardOpen();
+        if (keyboardPluginAvailable()) {
+          keepKeyboardOpen();
+        }
 
         //MockService.sendMessage(message).then(function(data) {
         $scope.input.message = '';
@@ -169,15 +196,19 @@ angular.module('starter.controllers', ['monospaced.elastic', 'angularMoment'])
 
         $timeout(function () {
           $scope.messages.push(message);
-          keepKeyboardOpen();
-          scroller.style.bottom = footerBar.clientHeight + keyboardHeight + tabNaviHeight + 'px';
+          if (keyboardPluginAvailable()) {
+            keepKeyboardOpen();
+          }
+          // scroller.style.bottom = footerBar.clientHeight + keyboardHeight + tabNaviHeight + 'px';
           viewScroll.scrollBottom(true);
         }, 500);
 
         $timeout(function () {
           $scope.messages.push(MockService.getMockMessage());
-          keepKeyboardOpen();
-          scroller.style.bottom = footerBar.clientHeight + keyboardHeight + tabNaviHeight + 'px';
+          if (keyboardPluginAvailable()) {
+            keepKeyboardOpen();
+          }
+          // scroller.style.bottom = footerBar.clientHeight + keyboardHeight + tabNaviHeight + 'px';
           viewScroll.scrollBottom(true);
         }, 2000);
 
@@ -242,8 +273,13 @@ angular.module('starter.controllers', ['monospaced.elastic', 'angularMoment'])
         var newFooterHeight = newHeight + 10;
         newFooterHeight = (newFooterHeight > 44) ? newFooterHeight : 44;
 
-        footerBar.style.height = newFooterHeight + keyboardHeight + 'px';
-        scroller.style.bottom = newFooterHeight + keyboardHeight + tabNaviHeight + 'px';
+        footerBar.style.height = newFooterHeight + 'px';
+
+        if (isAndroid) {
+          scroller.style.bottom = newFooterHeight + tabNaviHeight + 'px';
+        } else {
+          scroller.style.bottom = newFooterHeight + keyboardHeight + tabNaviHeight + 'px';
+        }
 
         setTimeout(function () {
           viewScroll.scrollBottom(true);
