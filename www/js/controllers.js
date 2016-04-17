@@ -386,10 +386,6 @@ angular.module('starter.controllers', ['monospaced.elastic', 'angularMoment'])
     };
   });
 
-function onProfilePicError(ele) {
-  this.ele.src = ''; // set a fallback
-}
-
 function getMockMessages() {
   return {
     "messages" : [{

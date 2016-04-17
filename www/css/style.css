@@ -1,11 +1,12 @@
-body {
-  /*cursor: url('http://ionicframework.com/img/finger.png'), auto;*/
+#userMessagesView .scroll-content {
+  /* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#deefff+0,98bede+100;Blue+3D+%2310 */
+  background: rgb(222,239,255); /* Old browsers */
+  background: -moz-linear-gradient(top,  rgba(222,239,255,1) 0%, rgba(152,190,222,1) 100%); /* FF3.6-15 */
+  background: -webkit-linear-gradient(top,  rgba(222,239,255,1) 0%,rgba(152,190,222,1) 100%); /* Chrome10-25,Safari5.1-6 */
+  background: linear-gradient(to bottom,  rgba(222,239,255,1) 0%,rgba(152,190,222,1) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#deefff', endColorstr='#98bede',GradientType=0 ); /* IE6-9 */
 }
 
-/* allows the bar-footer to be elastic /*
-/* optionally set a max-height */
-/* maxlength on the textarea will prevent /*
-/* it from getting too large also */
 .bar-footer {
   overflow: visible !important;
 }
@@ -32,22 +33,6 @@ at the bottom as the textarea resizes */
 .footer-btn {
   position: absolute !important;
   bottom: 0;
-}
-
-img.profile-pic {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  position: absolute;
-  bottom: 10px;
-}
-
-img.profile-pic.left {
-  left: 10px;
-}
-
-img.profile-pic.right {
-  right: 10px;
 }
 
 .ion-email {
@@ -96,33 +81,37 @@ img.profile-pic.right {
 }
 
 .chat-bubble.left {
-  background-color: #e6e5eb;
+  background-color: whitesmoke;
   float: left;
-  margin-left: 55px;
 }
 
 .chat-bubble.left:before {
-  background-color: #e6e5eb;
+  background-color: whitesmoke;
   left: 10px;
   -webkit-transform: rotate(70deg) skew(5deg);
 }
 
 .chat-bubble.right {
-  background-color: #158ffe;
-  color: #fff;
+  background-color: #EFFDDE;
+  /*color: #fff;*/
   float: right;
-  margin-right: 55px;
+  box-shadow: 2px 2px 0px #8abaa8;
 }
 
 .chat-bubble.right:before {
-  background-color: #158ffe;
+  background-color: #EFFDDE;
   right: 10px;
+  box-shadow: 1px -2px 0px #8abaa8;
   -webkit-transform: rotate(118deg) skew(-5deg);
 }
 
 .chat-bubble.right a.autolinker {
-  color: #fff;
+  /*color: #fff;*/
   font-weight: bold;
+}
+
+.chat-bubble.right .message-detail {
+  text-align: right;
 }
 
 .user-messages-top-icon {
