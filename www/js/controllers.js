@@ -20,10 +20,10 @@ angular.module('starter.controllers', ['monospaced.elastic', 'angularMoment'])
 
   .controller('ChatDetailCtrl', ['$scope', '$rootScope', '$state',
     '$stateParams', 'MockService', '$ionicActionSheet',
-    '$ionicPopup', '$ionicScrollDelegate', '$timeout', '$interval', 'Chats',
+    '$ionicPopup', '$ionicScrollDelegate', '$timeout', '$interval', 'Chats', '$ionicTabsDelegate',
     function ($scope, $rootScope, $state, $stateParams, MockService,
               $ionicActionSheet,
-              $ionicPopup, $ionicScrollDelegate, $timeout, $interval, Chats) {
+              $ionicPopup, $ionicScrollDelegate, $timeout, $interval, Chats, $ionicTabsDelegate) {
 
       $scope.chat = Chats.get($stateParams.chatId);
 
@@ -51,9 +51,6 @@ angular.module('starter.controllers', ['monospaced.elastic', 'angularMoment'])
       var footerBar; // gets set in $ionicView.enter
       var scroller;
       var txtInput; // ^^^
-      var tabNavi;
-      var $tabNavi;
-      var tabNaviHeight = 0;
       var keyboardHeight = 0;
       var isAndroid = ionic.Platform.isAndroid();
 
@@ -62,15 +59,11 @@ angular.module('starter.controllers', ['monospaced.elastic', 'angularMoment'])
         console.log('keyboardShowHandler');
         keyboardHeight = e.keyboardHeight;
 
-        if (!isAndroid) {
-          tabNaviHeight = 0;
-        }
-
         $rootScope.hideTabs = true;
 
         $timeout(function() {
           if (isAndroid) {
-            scroller.style.bottom = footerBar.clientHeight + tabNaviHeight + 'px';
+            scroller.style.bottom = footerBar.clientHeight + 'px';
           } else {
             scroller.style.bottom = footerBar.clientHeight + keyboardHeight + 'px';
           }
@@ -81,10 +74,9 @@ angular.module('starter.controllers', ['monospaced.elastic', 'angularMoment'])
       function keyboardHideHandler(e) {
         console.log('Goodnight, sweet prince');
         keyboardHeight = 0;
-        tabNaviHeight = tabNavi.offsetHeight;
 
         $timeout(function() {
-          scroller.style.bottom = footerBar.clientHeight + tabNaviHeight + 'px';
+          scroller.style.bottom = footerBar.clientHeight + 'px';
           viewScroll.scrollBottom(false);
         }, 0);
       }
@@ -103,6 +95,10 @@ angular.module('starter.controllers', ['monospaced.elastic', 'angularMoment'])
         }
       }
 
+      $scope.$on('$ionicView.beforeEnter', function () {
+        $ionicTabsDelegate.showBar(false);
+      });
+
       $scope.$on('$ionicView.enter', function () {
         console.log('UserMessages $ionicView.enter');
 
@@ -110,6 +106,7 @@ angular.module('starter.controllers', ['monospaced.elastic', 'angularMoment'])
         window.addEventListener('native.keyboardhide', keyboardHideHandler);
 
         if (keyboardPluginAvailable()) {
+          cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
           cordova.plugins.Keyboard.disableScroll(true);
         }
 
@@ -119,9 +116,6 @@ angular.module('starter.controllers', ['monospaced.elastic', 'angularMoment'])
           footerBar = document.body.querySelector('#userMessagesView .bar-footer');
           scroller = document.body.querySelector('#userMessagesView .scroll-content');
           txtInput = angular.element(footerBar.querySelector('textarea'));
-          tabNavi = document.body.querySelector('.tab-nav');
-          $tabNavi = angular.element(tabNavi);
-          tabNaviHeight = tabNavi.offsetHeight;
 
           txtInput.on('keydown', keydownHandler);
         }, 0);
@@ -149,6 +143,8 @@ angular.module('starter.controllers', ['monospaced.elastic', 'angularMoment'])
       });
 
       $scope.$on('$ionicView.beforeLeave', function () {
+        $ionicTabsDelegate.showBar(true);
+
         if (!$scope.input.message || $scope.input.message === '') {
           localStorage.removeItem('userMessage-' + $scope.toUser._id);
         }
@@ -182,13 +178,6 @@ angular.module('starter.controllers', ['monospaced.elastic', 'angularMoment'])
           text : $scope.input.message
         };
 
-        // if you do a web service call this will be needed as well as before the viewScroll calls
-        // you can't see the effect of this in the browser it needs to be used on a real device
-        // for some reason the one time blur event is not firing in the browser but does on devices
-        if (keyboardPluginAvailable()) {
-          keepKeyboardOpen();
-        }
-
         //MockService.sendMessage(message).then(function(data) {
         $scope.input.message = '';
 
@@ -200,33 +189,16 @@ angular.module('starter.controllers', ['monospaced.elastic', 'angularMoment'])
 
         $timeout(function () {
           $scope.messages.push(message);
-          if (keyboardPluginAvailable()) {
-            keepKeyboardOpen();
-          }
-          // scroller.style.bottom = footerBar.clientHeight + keyboardHeight + tabNaviHeight + 'px';
           viewScroll.scrollBottom(true);
         }, 500);
 
         $timeout(function () {
           $scope.messages.push(MockService.getMockMessage());
-          if (keyboardPluginAvailable()) {
-            keepKeyboardOpen();
-          }
-          // scroller.style.bottom = footerBar.clientHeight + keyboardHeight + tabNaviHeight + 'px';
           viewScroll.scrollBottom(true);
         }, 2000);
 
         //});
       };
-
-      // this keeps the keyboard open on a device only after sending a message, it is non obtrusive
-      function keepKeyboardOpen() {
-        console.log('keepKeyboardOpen');
-        txtInput.one('blur', function () {
-          console.log('textarea blur, focus back on it');
-          txtInput[0].focus();
-        });
-      }
 
       $scope.onMessageHold = function (e, itemIndex, message) {
         console.log('onMessageHold');
@@ -280,9 +252,9 @@ angular.module('starter.controllers', ['monospaced.elastic', 'angularMoment'])
         footerBar.style.height = newFooterHeight + 'px';
 
         if (isAndroid) {
-          scroller.style.bottom = newFooterHeight + tabNaviHeight + 'px';
+          scroller.style.bottom = newFooterHeight + 'px';
         } else {
-          scroller.style.bottom = newFooterHeight + keyboardHeight + tabNaviHeight + 'px';
+          scroller.style.bottom = newFooterHeight + keyboardHeight + 'px';
         }
 
         setTimeout(function () {
