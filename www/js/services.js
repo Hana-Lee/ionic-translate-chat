@@ -1,35 +1,20 @@
-angular.module('starter.services', [])
+angular.module('starter.services', ['ionic'])
 
   .factory('Chats', function () {
     // Might use a resource here that returns a JSON array
 
     // Some fake testing data
     var chats = [{
-      id : 0,
-      name : 'Ben Sparrow',
-      lastText : 'You on your way?',
-      face : 'img/ben.png'
-    }, {
-      id : 1,
-      name : 'Max Lynx',
-      lastText : 'Hey, it\'s me',
-      face : 'img/max.png'
-    }, {
-      id : 2,
-      name : 'Adam Bradleyson',
-      lastText : 'I should buy a boat',
-      face : 'img/adam.jpg'
-    }, {
-      id : 3,
-      name : 'Perry Governor',
-      lastText : 'Look at my mukluks!',
-      face : 'img/perry.png'
-    }, {
-      id : 4,
-      name : 'Mike Harrington',
-      lastText : 'This is wicked good ice cream.',
-      face : 'img/mike.png'
+      id : 'f1d2067a7e0de9048b0a372653bf140b',
+      name : '구여신',
+      lastText : '사랑합니다.',
+      face : 'img/sarah.png'
     }];
+
+    if (ionic.Platform.isAndroid()) {
+      chats[0].name = '이하나';
+      chats[0].face = 'img/hana.jpg';
+    }
 
     return {
       all : function () {
@@ -39,12 +24,56 @@ angular.module('starter.services', [])
         chats.splice(chats.indexOf(chat), 1);
       },
       get : function (chatId) {
-        for (var i = 0; i < chats.length; i++) {
-          if (chats[i].id === parseInt(chatId)) {
+        var chatsLength = chats.length;
+        for (var i = 0; i < chatsLength; i++) {
+          if (chats[i].id === chatId) {
             return chats[i];
           }
         }
         return null;
       }
     };
+  })
+  .factory('Users', function() {
+    var hana = {
+      id : '204adf928ce0ea2449d03a5d07707021',
+      name : '이하나',
+      face : 'img/hana.jpg',
+      lastTime : '04-19'
+    };
+    var sarah = {
+      id : '6bd0303195b3ec9709149a095577e36f',
+      name : '구여신',
+      face : 'img/sarah.png',
+      lastTime : '04-19'
+    };
+    var users = [];
+
+    if (ionic.Platform.isAndroid()) {
+      users.push(hana);
+    } else {
+      users.push(sarah);
+    }
+
+    return {
+      all : function () {
+        return users;
+      },
+      get : function (userId) {
+        var usersLength = users.length;
+        for (var i = 0; i < usersLength; i++) {
+          if (users[i].id === userId) {
+            return users[i];
+          }
+        }
+        return null;
+      }
+    };
+  })
+  .factory('Socket', function (socketFactory) {
+    var socket = io.connect('http://node-translate-chat.herokuapp.com');
+
+    return socketFactory({
+      ioSocket : socket
+    });
   });

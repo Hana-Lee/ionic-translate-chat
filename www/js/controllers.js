@@ -1,6 +1,17 @@
 angular.module('starter.controllers', ['monospaced.elastic', 'angularMoment'])
 
-  .controller('DashCtrl', function ($scope) {
+  .controller('DashCtrl', function ($scope, $ionicTabsDelegate, Users) {
+    $scope.users = Users.all();
+    $scope.remove = function (user) {
+      console.log('remove user', user);
+    };
+    $scope.join = function (user) {
+      console.log('join', user);
+    };
+
+    $scope.$on('$ionicView.beforeEnter', function () {
+      $ionicTabsDelegate.showBar(true);
+    });
   })
 
   .controller('ChatsCtrl', function ($scope, Chats) {
@@ -20,30 +31,12 @@ angular.module('starter.controllers', ['monospaced.elastic', 'angularMoment'])
 
   .controller('ChatDetailCtrl', ['$scope', '$rootScope', '$state',
     '$stateParams', 'MockService', '$ionicActionSheet',
-    '$ionicPopup', '$ionicScrollDelegate', '$timeout', '$interval', 'Chats', '$ionicTabsDelegate',
+    '$ionicPopup', '$ionicScrollDelegate', '$timeout', '$interval', 'Chats',
+    '$ionicTabsDelegate', 'Socket',
     function ($scope, $rootScope, $state, $stateParams, MockService,
               $ionicActionSheet,
-              $ionicPopup, $ionicScrollDelegate, $timeout, $interval, Chats, $ionicTabsDelegate) {
-
-      $scope.chat = Chats.get($stateParams.chatId);
-
-      // mock acquiring data via $stateParams
-      $scope.toUser = {
-        _id : '534b8e5aaa5e7afc1b23e69b',
-        pic : 'http://ionicframework.com/img/docs/venkman.jpg',
-        username : 'Venkman'
-      };
-
-      // this could be on $rootScope rather than in $stateParams
-      $scope.user = {
-        _id : '534b8fb2aa5e7afc1b23e69c',
-        pic : 'http://ionicframework.com/img/docs/mcfly.jpg',
-        username : 'Marty'
-      };
-
-      $scope.input = {
-        message : localStorage['userMessage-' + $scope.toUser._id] || ''
-      };
+              $ionicPopup, $ionicScrollDelegate, $timeout, $interval, Chats,
+              $ionicTabsDelegate, Socket) {
 
       var messageCheckTimer;
 
@@ -53,6 +46,43 @@ angular.module('starter.controllers', ['monospaced.elastic', 'angularMoment'])
       var txtInput; // ^^^
       var keyboardHeight = 0;
       var isAndroid = ionic.Platform.isAndroid();
+
+      $scope.chat = Chats.get($stateParams.chatId);
+      $scope.messages = [];
+
+      if (isAndroid) {
+        // mock acquiring data via $stateParams
+        $scope.toUser = {
+          _id : '204adf928ce0ea2449d03a5d07707021',
+          // pic : 'http://ionicframework.com/img/docs/venkman.jpg',
+          username : '이하나'
+        };
+
+        // this could be on $rootScope rather than in $stateParams
+        $scope.user = {
+          _id : '6bd0303195b3ec9709149a095577e36f',
+          // pic : 'http://ionicframework.com/img/docs/mcfly.jpg',
+          username : '구여신'
+        };
+      } else {
+        // this could be on $rootScope rather than in $stateParams
+        $scope.toUser = {
+          _id : '6bd0303195b3ec9709149a095577e36f',
+          // pic : 'http://ionicframework.com/img/docs/mcfly.jpg',
+          username : '구여신'
+        };
+
+        // mock acquiring data via $stateParams
+        $scope.user = {
+          _id : '204adf928ce0ea2449d03a5d07707021',
+          // pic : 'http://ionicframework.com/img/docs/venkman.jpg',
+          username : '이하나'
+        };
+      }
+
+      $scope.input = {
+        message : localStorage['userMessage-' + $scope.toUser._id] || ''
+      };
 
       // TODO 입력 버튼 제거, 키보드의 엔터로 메세지 입력되게 변경하여 키보드 show, hide 문제 해결하기
       function keyboardShowHandler(e) {
@@ -102,6 +132,25 @@ angular.module('starter.controllers', ['monospaced.elastic', 'angularMoment'])
       $scope.$on('$ionicView.enter', function () {
         console.log('UserMessages $ionicView.enter');
 
+        Socket.emit('add user', {username : $scope.user.username});
+
+        Socket.on('new message', function (data) {
+          $scope.doneLoading = true;
+          var fromUserId = $scope.toUser._id;
+          if (data.username === $scope.user.username) {
+            fromUserId = $scope.user._id;
+          }
+          $scope.messages.push({
+            userId : fromUserId,
+            date : new Date(),
+            text : data.message
+          });
+
+          $timeout(function () {
+            viewScroll.scrollBottom(false);
+          }, 0);
+        });
+
         window.addEventListener('native.keyboardshow', keyboardShowHandler);
         window.addEventListener('native.keyboardhide', keyboardHideHandler);
 
@@ -110,7 +159,7 @@ angular.module('starter.controllers', ['monospaced.elastic', 'angularMoment'])
           cordova.plugins.Keyboard.disableScroll(true);
         }
 
-        getMessages();
+        // getMessages();
 
         $timeout(function () {
           footerBar = document.body.querySelector('#userMessagesView .bar-footer');
@@ -190,12 +239,14 @@ angular.module('starter.controllers', ['monospaced.elastic', 'angularMoment'])
         $timeout(function () {
           $scope.messages.push(message);
           viewScroll.scrollBottom(true);
+
+          Socket.emit('new message', message.text);
         }, 500);
 
-        $timeout(function () {
-          $scope.messages.push(MockService.getMockMessage());
-          viewScroll.scrollBottom(true);
-        }, 2000);
+        // $timeout(function () {
+        //   $scope.messages.push(MockService.getMockMessage());
+        //   viewScroll.scrollBottom(true);
+        // }, 2000);
 
         //});
       };

@@ -9,7 +9,8 @@
     "ngCordova": "^0.1.26-alpha",
     "moment": "^2.12.0",
     "angular-moment": "^0.10.3",
-    "angular-elastic": "^2.5.1"
+    "angular-elastic": "^2.5.1",
+    "angular-socket-io": "^0.7.0"
   },
   "resolutions": {
     "moment": ">=2.8.0 <2.11.0"
