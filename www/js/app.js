@@ -1,11 +1,12 @@
-// Ionic Starter App
+/**
+* @author Hana Lee
+* @since 2016-04-15 14:13
+*/
 
-// angular.module is a global place for creating, registering and retrieving Angular modules
-// 'starter' is the name of this angular module example (also set in a <body> attribute in index.html)
-// the 2nd parameter is an array of 'requires'
-// 'starter.services' is found in services.js
-// 'starter.controllers' is found in controllers.js
-angular.module('starter', ['ionic', 'starter.controllers', 'starter.services', 'btford.socket-io'])
+angular.module('translate-chat', [
+    'ionic', 'translate-chat.controllers', 'translate-chat.services',
+    'monospaced.elastic', 'angularMoment', 'btford.socket-io'
+  ])
 
   .run(function ($ionicPlatform) {
     $ionicPlatform.ready(function () {
@@ -30,6 +31,7 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.services', '
     }
 
     $ionicConfigProvider.tabs.position('bottom');
+    $ionicConfigProvider.navBar.alignTitle('center');
 
     // Ionic uses AngularUI Router which uses the concept of states
     // Learn more here: https://github.com/angular-ui/ui-router
@@ -45,17 +47,15 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.services', '
       })
 
       // Each tab has its own nav history stack:
-
-      .state('tab.dash', {
-        url : '/dash',
+      .state('tab.users', {
+        url : '/users',
         views : {
-          'tab-dash' : {
+          'tab-users' : {
             templateUrl : 'templates/tab-users.html',
             controller : 'DashCtrl'
           }
         }
       })
-
       .state('tab.chats', {
         url : '/chats',
         views : {
@@ -74,7 +74,6 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.services', '
           }
         }
       })
-
       .state('tab.account', {
         url : '/account',
         views : {
@@ -86,6 +85,6 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.services', '
       });
 
     // if none of the above states are matched, use this as the fallback
-    $urlRouterProvider.otherwise('/tab/dash');
+    $urlRouterProvider.otherwise('/tab/users');
 
   });

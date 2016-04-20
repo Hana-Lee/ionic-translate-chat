@@ -1,4 +1,9 @@
-angular.module('starter.controllers', ['monospaced.elastic', 'angularMoment'])
+/**
+ * @author Hana Lee
+ * @since 2016-04-15 14:13
+ */
+
+angular.module('translate-chat.controllers', [])
 
   .controller('DashCtrl', function ($scope, $ionicTabsDelegate, Users) {
     $scope.users = Users.all();

@@ -1,4 +1,8 @@
-angular.module('starter.services', ['ionic'])
+/**
+ * @author Hana Lee
+ * @since 2016-04-15 14:13
+ */
+angular.module('translate-chat.services', ['ionic'])
 
   .factory('Chats', function () {
     // Might use a resource here that returns a JSON array
