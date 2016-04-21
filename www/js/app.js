@@ -4,11 +4,12 @@
 */
 
 angular.module('translate-chat', [
-    'ionic', 'translate-chat.controllers', 'translate-chat.services',
+    'ionic', 'ngCordova',
+    'translate-chat.controllers', 'translate-chat.services',
     'monospaced.elastic', 'angularMoment', 'btford.socket-io'
   ])
 
-  .run(function ($ionicPlatform) {
+  .run(function ($ionicPlatform, $sqliteService) {
     $ionicPlatform.ready(function () {
       // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
       // for form inputs)
@@ -21,6 +22,8 @@ angular.module('translate-chat', [
         // org.apache.cordova.statusbar required
         StatusBar.styleDefault();
       }
+
+      $sqliteService.preloadDataBase(true);
     });
   })
 
@@ -52,7 +55,7 @@ angular.module('translate-chat', [
         views : {
           'tab-users' : {
             templateUrl : 'templates/tab-users.html',
-            controller : 'DashCtrl'
+            controller : 'UsersCtrl'
           }
         }
       })

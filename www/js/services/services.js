@@ -75,7 +75,7 @@ angular.module('translate-chat.services', ['ionic'])
     };
   })
   .factory('Socket', function (socketFactory) {
-    var socket = io.connect('http://node-translate-chat.herokuapp.com');
+    var socket = io.connect('http://ihanalee.com:3000');
 
     return socketFactory({
       ioSocket : socket

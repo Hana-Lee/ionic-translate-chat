@@ -5,7 +5,7 @@
 
 angular.module('translate-chat.controllers', [])
 
-  .controller('DashCtrl', function ($scope, $ionicTabsDelegate, Users) {
+  .controller('UsersCtrl', function ($ionicPlatform, $scope, $ionicTabsDelegate, Users, $cordovaDevice, $ionicModal) {
     $scope.users = Users.all();
     $scope.remove = function (user) {
       console.log('remove user', user);
@@ -16,6 +16,23 @@ angular.module('translate-chat.controllers', [])
 
     $scope.$on('$ionicView.beforeEnter', function () {
       $ionicTabsDelegate.showBar(true);
+    });
+
+    $scope.$on('$ionicView.enter', function () {
+      $ionicModal.fromTemplateUrl('templates/user-name-input.html', {
+        scope : $scope,
+        animation : 'slide-in-up'
+      }).then(function (modal) {
+        $ionicPlatform.registerBackButtonAction(function (evt) {
+          evt.preventDefault();
+        }, 100);
+        $scope.modal = modal;
+        $scope.modal.show();
+      });
+    });
+
+    $ionicPlatform.ready(function () {
+      // console.log('device uuid : ', $cordovaDevice.getUUID());
     });
   })
 

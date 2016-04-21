@@ -25,6 +25,7 @@
   <plugin name="cordova-plugin-splashscreen" spec="~3.2.1"/>
   <plugin name="cordova-plugin-statusbar" spec="~2.1.2"/>
   <plugin name="ionic-plugin-keyboard" spec="~2.0.1"/>
+  <plugin name="cordova-sqlite-ext" spec="https://github.com/litehelpers/cordova-sqlite-ext"/>
   <platform name="android">
     <icon src="resources/android/icon/drawable-ldpi-icon.png" density="ldpi"/>
     <icon src="resources/android/icon/drawable-mdpi-icon.png" density="mdpi"/>
