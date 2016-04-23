@@ -2,21 +2,39 @@
 * @author Hana Lee
 * @since 2016-04-15 14:13
 */
+/*jslint
+ browser  : true,
+ continue : true,
+ devel    : true,
+ indent   : 2,
+ maxerr   : 50,
+ nomen    : true,
+ plusplus : true,
+ regexp   : true,
+ vars     : true,
+ white    : true,
+ todo     : true,
+ node     : true
+ */
+/*global angular, cordova, StatusBar, ionic */
 
 angular.module('translate-chat', [
     'ionic', 'ngCordova',
-    'translate-chat.controllers', 'translate-chat.services',
+    'translate-chat.friend-controller', 'translate-chat.chats-controller', 'translate-chat.chatRooms-controller',
+    'translate-chat.accounts-controller',
+    'translate-chat.services',
     'monospaced.elastic', 'angularMoment', 'btford.socket-io'
   ])
 
   .run(function ($ionicPlatform, $sqliteService) {
+    'use strict';
+
     $ionicPlatform.ready(function () {
       // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
       // for form inputs)
       if (window.cordova && window.cordova.plugins && window.cordova.plugins.Keyboard) {
         cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
         cordova.plugins.Keyboard.disableScroll(true);
-
       }
       if (window.StatusBar) {
         // org.apache.cordova.statusbar required
@@ -28,6 +46,7 @@ angular.module('translate-chat', [
   })
 
   .config(function ($stateProvider, $urlRouterProvider, $ionicConfigProvider) {
+    'use strict';
 
     if (ionic.Platform.isIOS()) {
       $ionicConfigProvider.scrolling.jsScrolling(true);
@@ -55,7 +74,7 @@ angular.module('translate-chat', [
         views : {
           'tab-users' : {
             templateUrl : 'templates/tab-users.html',
-            controller : 'UsersCtrl'
+            controller : 'FriendsCtrl'
           }
         }
       })
@@ -73,7 +92,7 @@ angular.module('translate-chat', [
         views : {
           'tab-chats' : {
             templateUrl : 'templates/chat-detail.html',
-            controller : 'ChatDetailCtrl'
+            controller : 'ChatRoomsCtrl'
           }
         }
       })

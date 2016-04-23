@@ -1,64 +1,29 @@
 /**
  * @author Hana Lee
- * @since 2016-04-15 14:13
+ * @since 2016-04-23 20:50
  */
+/*jslint
+ browser  : true,
+ continue : true,
+ devel    : true,
+ indent   : 2,
+ maxerr   : 50,
+ nomen    : true,
+ plusplus : true,
+ regexp   : true,
+ vars     : true,
+ white    : true,
+ todo     : true,
+ unparam  : true,
+ node     : true
+ */
+/*global angular, ionic, cordova, Autolinker */
 
-angular.module('translate-chat.controllers', [])
-
-  .controller('UsersCtrl', function ($ionicPlatform, $scope, $ionicTabsDelegate, Users, $cordovaDevice, $ionicModal) {
-    $scope.users = Users.all();
-    $scope.remove = function (user) {
-      console.log('remove user', user);
-    };
-    $scope.join = function (user) {
-      console.log('join', user);
-    };
-
-    $scope.$on('$ionicView.beforeEnter', function () {
-      $ionicTabsDelegate.showBar(true);
-    });
-
-    $scope.$on('$ionicView.enter', function () {
-      $ionicModal.fromTemplateUrl('templates/user-name-input.html', {
-        scope : $scope,
-        animation : 'slide-in-up'
-      }).then(function (modal) {
-        $ionicPlatform.registerBackButtonAction(function (evt) {
-          evt.preventDefault();
-        }, 100);
-        $scope.modal = modal;
-        $scope.modal.show();
-      });
-    });
-
-    $ionicPlatform.ready(function () {
-      // console.log('device uuid : ', $cordovaDevice.getUUID());
-    });
-  })
-
-  .controller('ChatsCtrl', function ($scope, Chats) {
-    // With the new view caching in Ionic, Controllers are only called
-    // when they are recreated or on app start, instead of every page change.
-    // To listen for when this page is active (for example, to refresh data),
-    // listen for the $ionicView.enter event:
-    //
-    //$scope.$on('$ionicView.enter', function(e) {
-    //});
-
-    $scope.chats = Chats.all();
-    $scope.remove = function (chat) {
-      Chats.remove(chat);
-    };
-  })
-
-  .controller('ChatDetailCtrl', ['$scope', '$rootScope', '$state',
-    '$stateParams', 'MockService', '$ionicActionSheet',
-    '$ionicPopup', '$ionicScrollDelegate', '$timeout', '$interval', 'Chats',
-    '$ionicTabsDelegate', 'Socket',
-    function ($scope, $rootScope, $state, $stateParams, MockService,
-              $ionicActionSheet,
-              $ionicPopup, $ionicScrollDelegate, $timeout, $interval, Chats,
-              $ionicTabsDelegate, Socket) {
+angular.module('translate-chat.chatRooms-controller', [])
+  .controller('ChatRoomsCtrl',
+    function ($scope, $rootScope, $state, $stateParams, MockService, $ionicActionSheet, $ionicPopup,
+              $ionicScrollDelegate, $timeout, $interval, Chats, $ionicTabsDelegate, Socket) {
+      'use strict';
 
       var messageCheckTimer;
 
@@ -106,10 +71,14 @@ angular.module('translate-chat.controllers', [])
         message : localStorage['userMessage-' + $scope.toUser._id] || ''
       };
 
+      function keyboardPluginAvailable() {
+        return window.cordova && window.cordova.plugins && window.cordova.plugins.Keyboard;
+      }
+
       // TODO 입력 버튼 제거, 키보드의 엔터로 메세지 입력되게 변경하여 키보드 show, hide 문제 해결하기
-      function keyboardShowHandler(e) {
+      function keyboardShowHandler(event) {
         console.log('keyboardShowHandler');
-        keyboardHeight = e.keyboardHeight;
+        keyboardHeight = event.keyboardHeight;
 
         $rootScope.hideTabs = true;
 
@@ -123,7 +92,7 @@ angular.module('translate-chat.controllers', [])
         }, 0);
       }
 
-      function keyboardHideHandler(e) {
+      function keyboardHideHandler(/*event*/) {
         console.log('Goodnight, sweet prince');
         keyboardHeight = 0;
 
@@ -133,11 +102,12 @@ angular.module('translate-chat.controllers', [])
         }, 0);
       }
 
-      function keydownHandler(e) {
-        console.log('key down handler', e.keyCode);
-        if (e.keyCode === 13) {
-          e.preventDefault();
-          e.stopPropagation();
+      function keydownHandler(event) {
+        console.log('key down handler', event.keyCode);
+        cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
+        if (event.keyCode === 13) {
+          event.preventDefault();
+          event.stopPropagation();
 
           if (txtInput.val().replace(/\s+/g, '') !== '') {
             $scope.sendMessage();
@@ -235,7 +205,7 @@ angular.module('translate-chat.controllers', [])
         });
       }
 
-      $scope.$watch('input.message', function (newValue, oldValue) {
+      $scope.$watch('input.message', function (newValue/*, oldValue*/) {
         console.log('input.message $watch, newValue "' + newValue + '"', arguments);
         if (!newValue) {
           newValue = '';
@@ -243,7 +213,7 @@ angular.module('translate-chat.controllers', [])
         localStorage['userMessage-' + $scope.toUser._id] = newValue;
       });
 
-      $scope.sendMessage = function (sendMessageForm) {
+      $scope.sendMessage = function (/*sendMessageForm*/) {
         var message = {
           toId : $scope.toUser._id,
           text : $scope.input.message
@@ -273,7 +243,9 @@ angular.module('translate-chat.controllers', [])
         //});
       };
 
-      $scope.onMessageHold = function (e, itemIndex, message) {
+      $scope.onMessageHold = function (event, itemIndex, message) {
+        event.preventDefault();
+
         console.log('onMessageHold');
         console.log('message: ' + JSON.stringify(message, null, 2));
         $ionicActionSheet.show({
@@ -314,10 +286,16 @@ angular.module('translate-chat.controllers', [])
 
       $scope.$on('elastic:resize', function(event, element, oldHeight, newHeight) {
         // do stuff
-        console.log('elastic:resize');
-        if (!element) return;
+        event.preventDefault();
 
-        if (!footerBar) return;
+        console.log('elastic:resize');
+        if (!element) {
+          return;
+        }
+
+        if (!footerBar) {
+          return;
+        }
 
         var newFooterHeight = newHeight + 10;
         newFooterHeight = (newFooterHeight > 44) ? newFooterHeight : 44;
@@ -334,11 +312,12 @@ angular.module('translate-chat.controllers', [])
           viewScroll.scrollBottom(true);
         }, 50);
       });
-    }])
+    })
 
   // services
   .factory('MockService', ['$http', '$q',
     function ($http, $q) {
+      'use strict';
       var me = {};
 
       me.getUserMessages = function (d) {
@@ -376,8 +355,11 @@ angular.module('translate-chat.controllers', [])
   // fitlers
   .filter('nl2br', ['$filter',
     function ($filter) {
+      'use strict';
       return function (data) {
-        if (!data) return data;
+        if (!data) {
+          return data;
+        }
         return data.replace(/\n\r?/g, '<br />');
       };
     }
@@ -386,6 +368,7 @@ angular.module('translate-chat.controllers', [])
   // directives
   .directive('autolinker', ['$timeout',
     function ($timeout) {
+      'use strict';
       return {
         restrict : 'A',
         link : function (scope, element, attrs) {
@@ -423,13 +406,7 @@ angular.module('translate-chat.controllers', [])
         }
       }
     }
-  ])
-
-  .controller('AccountCtrl', function ($scope) {
-    $scope.settings = {
-      enableFriends : true
-    };
-  });
+  ]);
 
 function getMockMessages() {
   return {
@@ -505,8 +482,4 @@ function getMockMessages() {
       "readDate" : "2014-12-01T06:27:38.338Z"
     }], "unread" : 0
   };
-}
-
-function keyboardPluginAvailable() {
-  return window.cordova && window.cordova.plugins && window.cordova.plugins.Keyboard;
 }
