@@ -17,7 +17,7 @@
  node     : true
  */
 /*global angular */
-angular.module('translate-chat.friend-controller', [])
+angular.module('translate-chat.friends-controller', [])
   .controller('FriendsCtrl', function ($ionicPlatform, $scope, $ionicTabsDelegate, Users, $ionicModal) {
     'use strict';
     

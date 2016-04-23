@@ -20,7 +20,7 @@
 
 angular.module('translate-chat', [
     'ionic', 'ngCordova',
-    'translate-chat.friend-controller', 'translate-chat.chats-controller', 'translate-chat.chatRooms-controller',
+    'translate-chat.friends-controller', 'translate-chat.chats-controller', 'translate-chat.chatRooms-controller',
     'translate-chat.accounts-controller',
     'translate-chat.services',
     'monospaced.elastic', 'angularMoment', 'btford.socket-io'
