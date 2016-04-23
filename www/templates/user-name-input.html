@@ -11,9 +11,9 @@
         <p>앱에서 사용할 이름을 아래에 입력 해주세요</p>
         <br />
         <label for="user-name" class="item item-input">
-          <input type="text" id="user-name" placeholder="이름 입력">
+          <input type="text" id="user-name" placeholder="이름 입력" ng-model="user.username">
         </label>
-        <button class="button button-block button-royal icon icon-left ion-ios-cloud">입력</button>
+        <button class="button button-block button-royal icon icon-left ion-ios-cloud" ng-click="createUser()">입력</button>
       </div>
     </div>
   </ion-content>

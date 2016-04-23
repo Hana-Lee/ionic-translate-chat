@@ -18,7 +18,7 @@
  node     : true
  */
 /*global angular */
-angular.module('translate-chat.accounts-controller', [])
+angular.module('translate-chat.account-controller', [])
   .controller('AccountCtrl', function ($scope) {
     'use strict';
 

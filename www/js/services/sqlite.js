@@ -1,13 +1,27 @@
+/**
+ * @author Hana Lee
+ * @since 2016-04-15 14:13
+ */
+/*jslint
+ browser  : true,
+ continue : true,
+ devel    : true,
+ indent   : 2,
+ maxerr   : 50,
+ nomen    : true,
+ plusplus : true,
+ regexp   : true,
+ vars     : true,
+ white    : true,
+ todo     : true,
+ unparam  : true,
+ node     : true
+ */
+/*global angular, translateChat */
 (function () {
   'use strict';
 
-  angular
-    .module('translate-chat')
-    .service('$sqliteService', $sqliteService);
-
-  $sqliteService.$inject = ['$q', '$cordovaSQLite'];
-  function $sqliteService($q, $cordovaSQLite) {
-
+  angular.module('translate-chat').service('$sqliteService', function ($q, $cordovaSQLite) {
     var self = this;
     var _db;
 
@@ -15,11 +29,11 @@
       if (!_db) {
         if (window.sqlitePlugin !== undefined) {
           console.log('window sqlite plugin use');
-          _db = window.sqlitePlugin.openDatabase({name : "pre.db", location : 2, createFromLocation : 1});
+          _db = window.sqlitePlugin.openDatabase({name : "translate-chat.db", location : 2, createFromLocation : 1});
         } else {
           // For debugging in the browser
           console.log('window open database use');
-          _db = window.openDatabase("pre.db", "1.0", "Database", 200000);
+          _db = window.openDatabase("translate-chat.db", "1.0", "Database", 200000);
         }
       }
       return _db;
@@ -29,10 +43,11 @@
       var deferred = $q.defer();
       self.executeSql(query, parameters).then(function (res) {
 
-        if (res.rows.length > 0)
+        if (res.rows.length > 0) {
           return deferred.resolve(res.rows.item(0));
-        else
-          return deferred.reject("There aren't items matching");
+        }
+
+        return deferred.reject("There aren't items matching");
       }, function (err) {
         return deferred.reject(err);
       });
@@ -44,10 +59,11 @@
       var deferred = $q.defer();
       self.executeSql(query, parameters).then(function (res) {
 
-        if (res.rows.length > 0)
+        if (res.rows.length > 0) {
           return deferred.resolve(res.rows.item(0));
-        else
-          return deferred.resolve(null);
+        }
+
+        return deferred.resolve(null);
       }, function (err) {
         return deferred.reject(err);
       });
@@ -58,8 +74,8 @@
     self.getItems = function (query, parameters) {
       var deferred = $q.defer();
       self.executeSql(query, parameters).then(function (res) {
-        var items = [];
-        for (var i = 0; i < res.rows.length; i++) {
+        var items = [], i;
+        for (i = 0; i < res.rows.length; i++) {
           items.push(res.rows.item(i));
         }
         return deferred.resolve(items);
@@ -76,39 +92,52 @@
       console.log('preload data base');
 
       //window.open("data:text/plain;charset=utf-8," + JSON.stringify({ data: window.queries.join('').replace(/\\n/g, '\n') }));
-      if (window.sqlitePlugin === undefined) {
-        enableLog && console.log('%c ***************** Starting the creation of the database in the browser ***************** ', 'background: #222; color: #bada55');
+      // if (window.sqlitePlugin === undefined) {
+        if (enableLog) {
+          console.log('%c ***************** Starting the creation of the database in the browser ***************** ', 'background: #222; color: #bada55');
+        }
         self.db().transaction(function (tx) {
-          for (var i = 0; i < window.queries.length; i++) {
-            var query = window.queries[i].replace(/\\n/g, '\n');
+          var i, query, queriesLength = translateChat.prepareQueries.length;
+          for (i = 0; i < queriesLength; i++) {
+            query = translateChat.prepareQueries[i].replace(/\\n/g, '\n');
 
-            enableLog && console.log(window.queries[i]);
+            if (enableLog) {
+              console.log(translateChat.prepareQueries[i]);
+            }
             tx.executeSql(query);
           }
         }, function (error) {
           deferred.reject(error);
         }, function () {
-          enableLog && console.log('%c ***************** Completing the creation of the database in the browser ***************** ', 'background: #222; color: #bada55');
-          deferred.resolve("OK");
-        });
-      }
-      else {
-        // deferred.resolve("OK");
-        enableLog && console.log('%c ***************** Starting the creation of the database in the browser ***************** ', 'background: #222; color: #bada55');
-        self.db().transaction(function (tx) {
-          for (var i = 0; i < window.queries.length; i++) {
-            var query = window.queries[i].replace(/\\n/g, '\n');
-
-            enableLog && console.log(window.queries[i]);
-            tx.executeSql(query);
+          if (enableLog) {
+            console.log('%c ***************** Completing the creation of the database in the browser ***************** ', 'background: #222; color: #bada55');
           }
-        }, function (error) {
-          deferred.reject(error);
-        }, function () {
-          enableLog && console.log('%c ***************** Completing the creation of the database in the browser ***************** ', 'background: #222; color: #bada55');
           deferred.resolve("OK");
         });
-      }
+      // } else {
+      //   // deferred.resolve("OK");
+      //   if (enableLog) {
+      //     console.log('%c ***************** Starting the creation of the database in the browser ***************** ', 'background: #222; color: #bada55');
+      //   }
+      //   self.db().transaction(function (tx) {
+      //     var i, query;
+      //     for (i = 0; i < window.queries.length; i++) {
+      //       query = window.queries[i].replace(/\\n/g, '\n');
+      //
+      //       if (enableLog) {
+      //         console.log(window.queries[i]);
+      //       }
+      //       tx.executeSql(query);
+      //     }
+      //   }, function (error) {
+      //     deferred.reject(error);
+      //   }, function () {
+      //     if (enableLog) {
+      //       console.log('%c ***************** Completing the creation of the database in the browser ***************** ', 'background: #222; color: #bada55');
+      //     }
+      //     deferred.resolve("OK");
+      //   });
+      // }
 
       return deferred.promise;
     };
@@ -116,5 +145,5 @@
     self.executeSql = function (query, parameters) {
       return $cordovaSQLite.execute(self.db(), query, parameters);
     };
-  }
-})();
+  });
+}());

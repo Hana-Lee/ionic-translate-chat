@@ -18,9 +18,9 @@
  */
 /*global angular */
 angular.module('translate-chat.friends-controller', [])
-  .controller('FriendsCtrl', function ($ionicPlatform, $scope, $ionicTabsDelegate, Users, $ionicModal) {
+  .controller('FriendsCtrl', function ($ionicPlatform, $scope, $ionicTabsDelegate, Users, $ionicModal, UserService, Socket) {
     'use strict';
-    
+
     $scope.users = Users.all();
     $scope.remove = function (user) {
       console.log('remove user', user);
@@ -45,4 +45,13 @@ angular.module('translate-chat.friends-controller', [])
         $scope.modal.show();
       });
     });
+
+    $scope.user = {};
+
+    $scope.createUser = function () {
+      console.log('user data', $scope.user);
+      UserService.createUser($scope.user.username, Socket).then(function () {
+        $scope.modal.hide();
+      });
+    };
   });

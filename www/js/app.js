@@ -21,7 +21,7 @@
 angular.module('translate-chat', [
     'ionic', 'ngCordova',
     'translate-chat.friends-controller', 'translate-chat.chats-controller', 'translate-chat.chatRooms-controller',
-    'translate-chat.accounts-controller',
+    'translate-chat.account-controller',
     'translate-chat.services',
     'monospaced.elastic', 'angularMoment', 'btford.socket-io'
   ])
@@ -69,11 +69,11 @@ angular.module('translate-chat', [
       })
 
       // Each tab has its own nav history stack:
-      .state('tab.users', {
-        url : '/users',
+      .state('tab.friends', {
+        url : '/friends',
         views : {
           'tab-users' : {
-            templateUrl : 'templates/tab-users.html',
+            templateUrl : 'templates/tab-friends.html',
             controller : 'FriendsCtrl'
           }
         }
@@ -87,11 +87,11 @@ angular.module('translate-chat', [
           }
         }
       })
-      .state('tab.chat-detail', {
+      .state('tab.chat-room', {
         url : '/chats/:chatId',
         views : {
-          'tab-chats' : {
-            templateUrl : 'templates/chat-detail.html',
+          'tab-room' : {
+            templateUrl : 'templates/chat-room.html',
             controller : 'ChatRoomsCtrl'
           }
         }
@@ -107,6 +107,6 @@ angular.module('translate-chat', [
       });
 
     // if none of the above states are matched, use this as the fallback
-    $urlRouterProvider.otherwise('/tab/users');
+    $urlRouterProvider.otherwise('/tab/friends');
 
   });

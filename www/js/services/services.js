@@ -16,10 +16,35 @@
  todo     : true,
  node     : true
  */
-/*global angular */
+/*global angular, ionic, io */
 angular.module('translate-chat.services', ['ionic'])
 
+  .service('UserService', function ($q, $sqliteService) {
+    'use strict';
+
+    this.createUser = function (username, Socket) {
+      var deferred = $q.defer();
+      var promise = deferred.promise;
+      var query = "Select * FROM Users";
+      console.log('get data', $q.when($sqliteService.getItems('SELECT * FROM Users')));
+
+      Socket.emit('createUser', {username : username});
+      Socket.on('createdUser', function (data) {
+        var result = $sqliteService.executeSql(
+          'INSERT INTO Users (user_id, user_name) VALUES (?, ?)', [data.user_id, data.user_name]
+        );
+
+        if (result) {
+          deferred.resolve('OK');
+        }
+      });
+      return promise;
+    };
+  })
+
   .factory('Chats', function () {
+    'use strict';
+
     // Might use a resource here that returns a JSON array
 
     // Some fake testing data
@@ -44,7 +69,8 @@ angular.module('translate-chat.services', ['ionic'])
       },
       get : function (chatId) {
         var chatsLength = chats.length;
-        for (var i = 0; i < chatsLength; i++) {
+        var i;
+        for (i = 0; i < chatsLength; i++) {
           if (chats[i].id === chatId) {
             return chats[i];
           }
@@ -53,7 +79,18 @@ angular.module('translate-chat.services', ['ionic'])
       }
     };
   })
-  .factory('Users', function() {
+  .factory('Friends', function () {
+    'use strict';
+
+    console.log('friends service');
+  })
+  .factory('User', function () {
+    'use strict';
+
+    console.log('User service');
+  })
+  .factory('Users', function () {
+    'use strict';
     var hana = {
       id : '204adf928ce0ea2449d03a5d07707021',
       name : '이하나',
@@ -80,7 +117,8 @@ angular.module('translate-chat.services', ['ionic'])
       },
       get : function (userId) {
         var usersLength = users.length;
-        for (var i = 0; i < usersLength; i++) {
+        var i;
+        for (i = 0; i < usersLength; i++) {
           if (users[i].id === userId) {
             return users[i];
           }
@@ -90,7 +128,10 @@ angular.module('translate-chat.services', ['ionic'])
     };
   })
   .factory('Socket', function (socketFactory) {
-    var socket = io.connect('http://ihanalee.com:3000');
+    'use strict';
+    // if use promise then https://gist.github.com/jrthib/4ce016449a29811d71b5
+    // var socket = io.connect('http://ihanalee.com:3000');
+    var socket = io.connect('http://localhost:3000');
 
     return socketFactory({
       ioSocket : socket
