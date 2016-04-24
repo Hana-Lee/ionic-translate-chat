@@ -16,29 +16,122 @@
  todo     : true,
  node     : true
  */
-/*global angular, ionic, io */
+/*global angular, ionic, io, translateChat */
 angular.module('translate-chat.services', ['ionic'])
 
   .service('UserService', function ($q, $sqliteService) {
     'use strict';
 
-    this.createUser = function (username, Socket) {
+    this.user = {};
+
+    this.createUserOnServer = function (userData, Socket) {
       var deferred = $q.defer();
       var promise = deferred.promise;
-      var query = "Select * FROM Users";
-      console.log('get data', $q.when($sqliteService.getItems('SELECT * FROM Users')));
 
-      Socket.emit('createUser', {username : username});
+      Socket.emit('createUser', userData);
       Socket.on('createdUser', function (data) {
-        var result = $sqliteService.executeSql(
-          'INSERT INTO Users (user_id, user_name) VALUES (?, ?)', [data.user_id, data.user_name]
-        );
-
-        if (result) {
-          deferred.resolve('OK');
-        }
+        deferred.resolve(data);
+        this.user.user_id = data.user_id;
+        this.user.user_name = data.username;
+        this.user.device_id = data.device_id;
+        localStorage.setItem('translate-chat-user-id', data.user_id);
+        localStorage.setItem('translate-chat-user-name', data.username);
+        localStorage.setItem('translate-chat-device-id', data.device_id);
       });
       return promise;
+    };
+
+    this.get = function () {
+      this.user.user_id = localStorage.getItem('translate-chat-user-id');
+      this.user.user_name = localStorage.getItem('translate-chat-user-name');
+      this.user.device_id = localStorage.getItem('translate-chat-device-id');
+
+      return this.user;
+    };
+
+    this.createUserOnLocal = function (userData) {
+      var deferred = $q.defer();
+      var promise = deferred.promise;
+
+      $q.when($sqliteService.executeSql(
+        translateChat.QUERIES.INSERT_USER, [userData.user_id, userData.username, userData.device_id]
+      )).then(function (result) {
+        deferred.resolve(result);
+      }, function (error) {
+        deferred.reject(error);
+      });
+
+      return promise;
+    };
+
+    this.retrieveAlreadyRegisteredUserByDeviceIdOnServer = function (userData, Socket) {
+      var deferred = $q.defer();
+      var promise = deferred.promise;
+
+      Socket.emit('retrieveAlreadyRegisteredUserByDeviceId', userData);
+      Socket.on('retrievedAlreadyRegisteredUserByDeviceId', function (data) {
+        console.log('retrieveAlreadyRegisteredUserByDeviceIdOnServer result : ', data);
+        deferred.resolve(data);
+      });
+
+      return promise;
+    };
+
+    this.retrieveAlreadyRegisteredUserByDeviceIdOnLocal = function (userData) {
+      var deferred = $q.defer();
+      var promise = deferred.promise;
+
+      $q.when($sqliteService.getFirstItem(translateChat.QUERIES.SELECT_USER_BY_DEVICE_ID, [userData.device_id]))
+        .then(function (result) {
+          console.log('select user by device id result', result);
+          deferred.resolve(result);
+        }, function (error) {
+          console.log('select user by device id error', error, userData);
+          deferred.reject(error);
+        });
+
+      return promise;
+    };
+
+    this.retrieveAlreadyRegisteredUserByUserNameOnServer = function (userData, Socket) {
+      var deferred = $q.defer();
+      var promise = deferred.promise;
+
+      Socket.emit('retrieveAlreadyRegisteredUserByUserName', userData);
+      Socket.on('retrievedAlreadyRegisteredUserByUserName', function (data) {
+        console.log('retrieveAlreadyRegisteredUserByUserName result : ', data);
+        deferred.resolve(data);
+      });
+
+      return promise;
+    };
+
+    this.retrieveAlreadyRegisteredUserByUserNameOnLocal = function (userData) {
+      var deferred = $q.defer();
+      var promise = deferred.promise;
+
+      $q.when($sqliteService.getFirstItem(translateChat.QUERIES.SELECT_USER_BY_USER_NAME, [userData.username]))
+        .then(function (result) {
+          console.log('select user by user name result', result);
+          deferred.resolve(result);
+        }, function (error) {
+          console.log('select user by user name error', error, userData);
+          deferred.reject(error);
+        });
+
+      return promise;
+    };
+  })
+
+  .factory('Device', function ($cordovaDevice) {
+    'use strict';
+    return {
+      getId : function () {
+        if (ionic.Platform.isAndroid() && ionic.Platform.isIOS()) {
+          return $cordovaDevice.getUUID();
+        }
+        return new Date().getTime().toString();
+      }
     };
   })
 
@@ -79,22 +172,34 @@ angular.module('translate-chat.services', ['ionic'])
       }
     };
   })
-  .factory('Friends', function () {
-    'use strict';
-
-    console.log('friends service');
-  })
-  .factory('User', function () {
+  .factory('Users', function ($q, Socket) {
     'use strict';
 
     console.log('User service');
+    var users = [];
+    return {
+      all : function (userData) {
+        var deferred = $q.defer();
+        var promise = deferred.promise;
+        Socket.emit('retrieveAllUsers');
+        Socket.on('retrievedAllUsers', function (data) {
+          data.forEach(function (user) {
+            if (user.user_id !== userData.user_id) {
+              users.push(user);
+            }
+          });
+          deferred.resolve(users);
+        });
+        return promise;
+      }
+    };
   })
-  .factory('Users', function () {
+  .factory('Friends', function ($q, $sqliteService) {
     'use strict';
     var hana = {
       id : '204adf928ce0ea2449d03a5d07707021',
       name : '이하나',
-      face : 'img/hana.jpg',
+      face : 'img/sarah.png',
       lastTime : '04-19'
     };
     var sarah = {
@@ -111,16 +216,41 @@ angular.module('translate-chat.services', ['ionic'])
       users.push(sarah);
     }
 
+    var friends = [];
+
     return {
-      all : function () {
-        return users;
+      add : function (userData, friendId) {
+        var deferred = $q.defer();
+        var promise = deferred.promise;
+        $q.when($sqliteService.executeSql(translateChat.QUERIES.INSERT_FRIEND, [userData.user_id, friendId]))
+          .then(function (result) {
+            deferred.resolve('OK');
+        });
+
+        return promise;
       },
-      get : function (userId) {
-        var usersLength = users.length;
+      all : function (userData) {
+        var deferred = $q.defer();
+        var promise = deferred.promise;
+        $q.when($sqliteService.getItems(translateChat.QUERIES.SELECT_ALL_FRIENDS_BY_USER_ID, [userData.user_id]))
+          .then(function (result) {
+            result.map(function (r) {
+              r.face = 'img/sarah.png';
+              return r;
+            });
+            deferred.resolve(result);
+          }, function (error) {
+            deferred.reject(error);
+          });
+
+        return promise;
+      },
+      get : function (friendId) {
+        var usersLength = friends.length;
         var i;
         for (i = 0; i < usersLength; i++) {
-          if (users[i].id === userId) {
-            return users[i];
+          if (friends[i].user_id === friendId) {
+            return friends[i];
           }
         }
         return null;

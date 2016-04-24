@@ -19,8 +19,12 @@
  */
 /*global angular */
 angular.module('translate-chat.account-controller', [])
-  .controller('AccountCtrl', function ($scope) {
+  .controller('AccountCtrl', function ($scope, UserService) {
     'use strict';
+
+    $scope.user = UserService.get();
+
+    console.log('user information : ', $scope.user);
 
     $scope.settings = {
       enableFriends : true

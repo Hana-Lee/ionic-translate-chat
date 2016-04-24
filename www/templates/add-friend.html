@@ -1,0 +1,15 @@
+<ion-modal-view class="edit">
+  <ion-header-bar class="bar bar-header bar-positive">
+    <h1 class="title">친구 추가</h1>
+    <button class="button button-assertive" ng-click="hideUserListModal()">닫기</button>
+  </ion-header-bar>
+  <ion-content>
+    <ion-list>
+      <ion-item class="item-remove-animate item-avatar item-icon-right item-text-wrap"
+                ng-repeat="user in users" ng-click="addFriend(user.user_id)">
+        <img ng-src="{{user.face}}">
+        <h2>{{user.user_name}}</h2>
+      </ion-item>
+    </ion-list>
+  </ion-content>
+</ion-modal-view>
