@@ -3,9 +3,9 @@
     <ion-list>
       <ion-item class="item-remove-animate item-avatar item-icon-right item-text-wrap"
                 ng-repeat="chat in chats"
-                href="#/tab/chats/{{chat.id}}">
+                href="#/tab/chats/{{chat.chat_room_id}}">
         <img ng-src="{{chat.face}}">
-        <h2>{{chat.name}}</h2>
+        <h2>{{chat.user_name}}</h2>
         <p>{{chat.lastText}}</p>
         <i class="icon ion-chevron-right icon-accessory"></i>
 

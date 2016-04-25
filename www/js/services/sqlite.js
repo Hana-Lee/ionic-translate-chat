@@ -21,7 +21,7 @@
 (function () {
   'use strict';
 
-  angular.module('translate-chat').service('$sqliteService', function ($q, $cordovaSQLite) {
+  angular.module('translate-chat').service('$sqliteService', function ($q, $rootScope, $cordovaSQLite) {
     var self = this;
     var _db;
 
@@ -29,7 +29,17 @@
       if (!_db) {
         if (window.sqlitePlugin !== undefined) {
           console.log('window sqlite plugin use');
+          // window.sqlitePlugin.deleteDatabase({name : 'translate-chat.db', location : 2}, function () {
+          //   console.log('delete success');
+          //   _db = window.sqlitePlugin.openDatabase({name : "translate-chat.db", location : 2, createFromLocation : 1});
+          //   $rootScope.$emit('db_init_done');
+          // }, function () {
+          //   console.log('delete fail');
+          //   _db = window.sqlitePlugin.openDatabase({name : "translate-chat.db", location : 2, createFromLocation : 1});
+          //   $rootScope.$emit('db_init_done');
+          // });
           _db = window.sqlitePlugin.openDatabase({name : "translate-chat.db", location : 2, createFromLocation : 1});
+          $rootScope.$emit('db_init_done');
         } else {
           // For debugging in the browser
           console.log('window open database use');
@@ -92,9 +102,9 @@
       console.log('preload data base');
 
       //window.open("data:text/plain;charset=utf-8," + JSON.stringify({ data: window.queries.join('').replace(/\\n/g, '\n') }));
-      // if (window.sqlitePlugin === undefined) {
+      if (window.sqlitePlugin === undefined) {
         if (enableLog) {
-          console.log('%c ***************** Starting the creation of the database in the browser ***************** ', 'background: #222; color: #bada55');
+          console.log('%c ***************** Starting the creation of the database ***************** ', 'background: #222; color: #bada55');
         }
         self.db().transaction(function (tx) {
           var i, query, queriesLength = translateChat.prepareQueries.length;
@@ -110,34 +120,14 @@
           deferred.reject(error);
         }, function () {
           if (enableLog) {
-            console.log('%c ***************** Completing the creation of the database in the browser ***************** ', 'background: #222; color: #bada55');
+            console.log('%c ***************** Completing the creation of the database ***************** ', 'background: #222; color: #bada55');
           }
           deferred.resolve("OK");
         });
-      // } else {
-      //   // deferred.resolve("OK");
-      //   if (enableLog) {
-      //     console.log('%c ***************** Starting the creation of the database in the browser ***************** ', 'background: #222; color: #bada55');
-      //   }
-      //   self.db().transaction(function (tx) {
-      //     var i, query;
-      //     for (i = 0; i < window.queries.length; i++) {
-      //       query = window.queries[i].replace(/\\n/g, '\n');
-      //
-      //       if (enableLog) {
-      //         console.log(window.queries[i]);
-      //       }
-      //       tx.executeSql(query);
-      //     }
-      //   }, function (error) {
-      //     deferred.reject(error);
-      //   }, function () {
-      //     if (enableLog) {
-      //       console.log('%c ***************** Completing the creation of the database in the browser ***************** ', 'background: #222; color: #bada55');
-      //     }
-      //     deferred.resolve("OK");
-      //   });
-      // }
+      } else {
+        self.db();
+        deferred.resolve("OK");
+      }
 
       return deferred.promise;
     };

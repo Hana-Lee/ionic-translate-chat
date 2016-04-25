@@ -42,28 +42,28 @@ angular.module('translate-chat.chatRooms-controller', [])
         $scope.toUser = {
           _id : '204adf928ce0ea2449d03a5d07707021',
           // pic : 'http://ionicframework.com/img/docs/venkman.jpg',
-          username : '이하나'
+          user_name : '이하나'
         };
 
         // this could be on $rootScope rather than in $stateParams
         $scope.user = {
           _id : '6bd0303195b3ec9709149a095577e36f',
           // pic : 'http://ionicframework.com/img/docs/mcfly.jpg',
-          username : '구여신'
+          user_name : '구여신'
         };
       } else {
         // this could be on $rootScope rather than in $stateParams
         $scope.toUser = {
           _id : '6bd0303195b3ec9709149a095577e36f',
           // pic : 'http://ionicframework.com/img/docs/mcfly.jpg',
-          username : '구여신'
+          user_name : '구여신'
         };
 
         // mock acquiring data via $stateParams
         $scope.user = {
           _id : '204adf928ce0ea2449d03a5d07707021',
           // pic : 'http://ionicframework.com/img/docs/venkman.jpg',
-          username : '이하나'
+          user_name : '이하나'
         };
       }
 
@@ -122,14 +122,14 @@ angular.module('translate-chat.chatRooms-controller', [])
       });
 
       $scope.$on('$ionicView.enter', function () {
-        console.log('UserMessages $ionicView.enter');
+        console.log('ChatRooms $ionicView.enter');
 
-        Socket.emit('add user', {username : $scope.user.username});
+        Socket.emit('add user', {user_name : $scope.user.user_name});
 
         Socket.on('new message', function (data) {
           $scope.doneLoading = true;
           var fromUserId = $scope.toUser._id;
-          if (data.username === $scope.user.username) {
+          if (data.user_name === $scope.user.user_name) {
             fromUserId = $scope.user._id;
           }
           $scope.messages.push({
@@ -224,7 +224,7 @@ angular.module('translate-chat.chatRooms-controller', [])
 
         message._id = new Date().getTime(); // :~)
         message.date = new Date();
-        message.username = $scope.user.username;
+        message.user_name = $scope.user.user_name;
         message.userId = $scope.user._id;
         message.pic = $scope.user.picture;
 
@@ -387,8 +387,8 @@ angular.module('translate-chat.chatRooms-controller', [])
             element.html(text);
 
             var autolinks = element[0].getElementsByClassName('autolinker');
-
-            for (var i = 0; i < autolinks.length; i++) {
+            var i;
+            for (i = 0; i < autolinks.length; i++) {
               angular.element(autolinks[i]).bind('click', function (e) {
                 var href = e.target.href;
                 console.log('autolinkClick, href: ' + href);

@@ -1,7 +1,7 @@
 /**
-* @author Hana Lee
-* @since 2016-04-15 14:13
-*/
+ * @author Hana Lee
+ * @since 2016-04-15 14:13
+ */
 /*jslint
  browser  : true,
  continue : true,
@@ -26,7 +26,7 @@ angular.module('translate-chat', [
     'monospaced.elastic', 'angularMoment', 'btford.socket-io'
   ])
 
-  .run(function ($ionicPlatform, $sqliteService) {
+  .run(function ($ionicPlatform, $rootScope, $sqliteService) {
     'use strict';
 
     $ionicPlatform.ready(function () {
@@ -41,7 +41,14 @@ angular.module('translate-chat', [
         StatusBar.styleDefault();
       }
 
-      $sqliteService.preloadDataBase(true);
+      $sqliteService.preloadDataBase(true).then(function (result) {
+        console.log('preload database done', JSON.stringify(result));
+        if (!ionic.Platform.isAndroid() && !ionic.Platform.isIOS()) {
+          $rootScope.$emit('db_init_done');
+        }
+      }, function (error) {
+        console.error('preload database error', JSON.stringify(error));
+      });
     });
   })
 
@@ -90,7 +97,7 @@ angular.module('translate-chat', [
       .state('tab.chat-room', {
         url : '/chats/:chatId',
         views : {
-          'tab-room' : {
+          'tab-chats' : {
             templateUrl : 'templates/chat-room.html',
             controller : 'ChatRoomsCtrl'
           }
