@@ -23,7 +23,7 @@ angular.module('translate-chat', [
     'translate-chat.friends-controller', 'translate-chat.chats-controller', 'translate-chat.chatRooms-controller',
     'translate-chat.account-controller',
     'translate-chat.services',
-    'monospaced.elastic', 'angularMoment', 'btford.socket-io'
+    'monospaced.elastic', 'angularMoment', 'btford.socket-io', 'underscore'
   ])
 
   .run(function ($ionicPlatform, $rootScope, $sqliteService) {
@@ -38,14 +38,25 @@ angular.module('translate-chat', [
       }
       if (window.StatusBar) {
         // org.apache.cordova.statusbar required
-        StatusBar.styleDefault();
+        window.StatusBar.styleDefault();
       }
+
+      $rootScope.env = {
+        DEVELOPMENT : true,
+        PRODUCTION : false
+      };
+
+      if ($rootScope.env.DEVELOPMENT) {
+        window.localStorage.clear();
+      }
+
+      $rootScope.first_run = !window.localStorage.getItem('translate-chat-device-id');
+
+      ionic.Platform.isNativeBrowser = (!ionic.Platform.isAndroid() && !ionic.Platform.isIOS());
 
       $sqliteService.preloadDataBase(true).then(function (result) {
         console.log('preload database done', JSON.stringify(result));
-        if (!ionic.Platform.isAndroid() && !ionic.Platform.isIOS()) {
-          $rootScope.$emit('db_init_done');
-        }
+        $rootScope.$emit('DB_ready');
       }, function (error) {
         console.error('preload database error', JSON.stringify(error));
       });

@@ -25,25 +25,37 @@
     var self = this;
     var _db;
 
+    function _openDatabase(type) {
+      if (type === 'browser') {
+        _db = window.openDatabase("translate-chat.db", "1.0", "Database", 200000);
+      } else {
+        _db = window.sqlitePlugin.openDatabase({
+          name : "translate-chat.db",
+          location : 2,
+          createFromLocation : 1
+        });
+      }
+    }
+
     self.db = function () {
       if (!_db) {
         if (window.sqlitePlugin !== undefined) {
           console.log('window sqlite plugin use');
-          // window.sqlitePlugin.deleteDatabase({name : 'translate-chat.db', location : 2}, function () {
-          //   console.log('delete success');
-          //   _db = window.sqlitePlugin.openDatabase({name : "translate-chat.db", location : 2, createFromLocation : 1});
-          //   $rootScope.$emit('db_init_done');
-          // }, function () {
-          //   console.log('delete fail');
-          //   _db = window.sqlitePlugin.openDatabase({name : "translate-chat.db", location : 2, createFromLocation : 1});
-          //   $rootScope.$emit('db_init_done');
-          // });
-          _db = window.sqlitePlugin.openDatabase({name : "translate-chat.db", location : 2, createFromLocation : 1});
-          $rootScope.$emit('db_init_done');
+          if ($rootScope.env.DEVELOPMENT) {
+            window.sqlitePlugin.deleteDatabase({name : 'translate-chat.db', location : 2}, function () {
+              console.log('delete success');
+              _openDatabase();
+            }, function () {
+              console.log('delete fail');
+              _openDatabase();
+            });
+          } else {
+            _openDatabase();
+          }
         } else {
           // For debugging in the browser
           console.log('window open database use');
-          _db = window.openDatabase("translate-chat.db", "1.0", "Database", 200000);
+          _openDatabase('browser');
         }
       }
       return _db;

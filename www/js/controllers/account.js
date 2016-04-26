@@ -19,10 +19,21 @@
  */
 /*global angular */
 angular.module('translate-chat.account-controller', [])
-  .controller('AccountCtrl', function ($scope, UserService) {
+  .controller('AccountCtrl', function ($rootScope, $scope, UserService) {
     'use strict';
 
-    $scope.user = UserService.get();
+    $scope.user = {};
+
+    $rootScope.$on('DB_ready', function () {
+      console.log('account db init done');
+      UserService.get().then(function (result) {
+        $scope.user = result;
+      });
+    });
+
+    $scope.$on('$ionicView.enter', function () {
+      console.log('account view enter');
+    });
 
     console.log('user information : ', $scope.user);
 

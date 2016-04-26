@@ -14,22 +14,26 @@
  vars     : true,
  white    : true,
  todo     : true,
- node     : true
+ node     : true,
+ unparam  : true
  */
 /*global angular, ionic */
 angular.module('translate-chat.friends-controller', ['ionic'])
   .controller('FriendsCtrl', function ($ionicPlatform, $scope, $rootScope, $ionicTabsDelegate, Friends,
-                                       $ionicModal, UserService, Device, Socket) {
+                                       $ionicModal, UserService, Device, Socket, _) {
     'use strict';
 
     $scope.friends = [];
     $scope.users = [];
+    $scope.user = {};
+
+    var initialize_done = false;
 
     Socket.on('addedFriend', function (data) {
       if (data.error) {
         console.error('added friend error : ', data);
       } else {
-        Friends.addToLocal(UserService.get(), data.result).then(function () {
+        Friends.addToLocal($scope.user, data.result).then(function () {
           $scope.friends.push(data.result);
         });
       }
@@ -50,24 +54,16 @@ angular.module('translate-chat.friends-controller', ['ionic'])
     });
 
     $scope.showUsers = function () {
-      UserService.getAllUserFromServer(UserService.get()).then(function (result) {
-        result.forEach(function (user) {
-          if ($scope.users.length === 0) {
+      UserService.getAllUserFromServer($scope.user).then(function (result) {
+        if ($scope.users.length === 0) {
+          result.forEach(function (user) {
             $scope.users.push(user);
-          } else {
-            var exists = false;
-            $scope.users.forEach(function (scopeUser) {
-              if (!exists && user.user_id === scopeUser.user_id) {
-                exists = true;
-              }
-            });
-
-            if (!exists) {
-              $scope.users.push(user);
-            }
-          }
-        });
-
+          });
+        } else {
+          $scope.users = _.uniq(_.union($scope.users, result), false, function (item) {
+            return item.user_id;
+          });
+        }
         $scope.userListModal.show();
       });
     };
@@ -78,8 +74,8 @@ angular.module('translate-chat.friends-controller', ['ionic'])
 
     $scope.addFriend = function (friend) {
       UserService.createUserOnLocal(friend).then(function () {
-        Friends.add(UserService.get(), friend).then(function () {
-          Friends.getAll(UserService.get()).then(function (result) {
+        Friends.add($scope.user, friend).then(function () {
+          Friends.getAll($scope.user).then(function (result) {
             $scope.friends = result;
             console.log('friends list', $scope.friends);
             $scope.userListModal.hide();
@@ -96,106 +92,92 @@ angular.module('translate-chat.friends-controller', ['ionic'])
       $ionicTabsDelegate.showBar(true);
     });
 
-    $rootScope.$on('db_init_done', function () {
-      $ionicModal.fromTemplateUrl('templates/user-name-input.html', {
-        scope : $scope,
-        animation : 'slide-in-down'
-      }).then(function (modal) {
-        $ionicPlatform.registerBackButtonAction(function (evt) {
-          evt.preventDefault();
-        }, 100);
-
-        $scope.modal = modal;
-
-        if (ionic.Platform.isAndroid() || ionic.Platform.isIOS()) {
-          UserService.retrieveAlreadyRegisteredUserByDeviceIdOnLocal({device_id : Device.getId()})
-            .then(function (result) {
-              console.log('retrieveAlreadyRegisteredUserByDeviceId result : ', JSON.stringify(result));
-              Friends.getAll(result).then(function (result) {
-                $scope.friends = result;
-              });
-            }, function (error) {
-              console.error('retrieve already registered user by device id on local error : ', JSON.stringify(error));
-              UserService.retrieveAlreadyRegisteredUserByDeviceIdOnServer({device_id : Device.getId()})
-                .then(function (result) {
-                  console.log('retrieveAlreadyRegisteredUserByDeviceIdOnServer result - friend : ', JSON.stringify(result));
-                  if (result && Object.keys(result).length > 0) {
-                    UserService.createUserOnLocal(result);
-                    Friends.getAll(result).then(function (result) {
-                      $scope.friends = result;
-                    });
-                  } else {
-                    $scope.modal.show();
-                  }
-                }, function (error) {
-                  console.error('retrieve already registered user by device id on server error : ', JSON.stringify(error));
-                  $scope.modal.show();
-                });
-            });
-        } else {
-          var deviceId = localStorage.getItem('translate-chat-device-id');
-
-          if (!deviceId) {
-            $scope.modal.show();
-          } else {
-            UserService.retrieveAlreadyRegisteredUserByDeviceIdOnLocal({device_id : deviceId})
-              .then(function (result) {
-                console.log('retrieveAlreadyRegisteredUserByDeviceId result : ', result);
-                Friends.getAll(result).then(function (result) {
-                  $scope.friends = result;
-                });
-              }, function (error) {
-                console.error('retrieve already registered user by device id error : ', error);
-                UserService.retrieveAlreadyRegisteredUserByDeviceIdOnServer({device_id : deviceId})
-                  .then(function (result) {
-                    if (result && Object.keys(result).length > 0) {
-                      UserService.createUserOnLocal(result);
-                      Friends.getAll(result).then(function (result) {
-                        $scope.friends = result;
-                      });
-                    } else {
-                      $scope.modal.show();
-                    }
-                  }, function (error) {
-                    console.error('retrieve already registered user by device id on server error : ', error);
-                    $scope.modal.show();
-                  });
-              });
-          }
-        }
+    function _initializeFriends(userData) {
+      Friends.getAll(userData).then(function (result) {
+        $scope.friends = result;
       });
+    }
+
+    function _initializeUserAndFriends() {
+      var params = {
+        device_id : Device.getId()
+      };
+      UserService.retrieveAlreadyRegisteredUserByDeviceIdOnLocal(params)
+        .then(function (result) {
+          console.log('retrieveAlreadyRegisteredUserByDeviceId result : ', JSON.stringify(result));
+          $scope.user = result;
+          _initializeFriends(result);
+        }, function (error) {
+          console.error('retrieve already registered user by device id on local error : ', JSON.stringify(error));
+          UserService.retrieveAlreadyRegisteredUserByDeviceIdOnServer(params)
+            .then(function (result) {
+              console.log('retrieveAlreadyRegisteredUserByDeviceIdOnServer result - friend : ', JSON.stringify(result));
+              if (result && Object.keys(result).length > 0) {
+                UserService.createUserOnLocal(result).then(function (result) {
+                  $scope.user = result;
+                  _initializeFriends(result);
+                });
+              } else {
+                console.error('user information is not exists on server : ', JSON.stringify(result));
+              }
+            }, function (error) {
+              console.error('retrieve already registered user by device id on server error : ', JSON.stringify(error));
+            });
+        });
+    }
+
+    $scope.$on('$ionicView.enter', function () {
+      if (initialize_done) {
+        if (!$scope.user) {
+          _initializeUserAndFriends();
+        }
+      }
+      console.log('friend view enter');
     });
 
-    $scope.user = {};
+    $ionicModal.fromTemplateUrl('templates/user-name-input.html', {
+      scope : $scope,
+      animation : 'slide-in-down'
+    }).then(function (modal) {
+      $ionicPlatform.registerBackButtonAction(function (evt) {
+        evt.preventDefault();
+      }, 100);
+
+      $scope.userNameInpuModal = modal;
+    });
+
+    $rootScope.$on('DB_ready', function () {
+      console.log('friend db init done');
+      if ($rootScope.first_run) {
+        console.log('first run');
+        $scope.userNameInpuModal.show();
+      } else {
+        _initializeUserAndFriends();
+      }
+    });
 
     $scope.createUser = function () {
       var deviceId = Device.getId();
       var deviceType = Device.getType();
       var deviceVersion = Device.getVersion();
 
-      console.log('create user : ', $scope.user_name);
       var params = {
         user_name : $scope.user.user_name, device_id : deviceId,
-        device_type : deviceType, device_version : deviceVersion
+        device_type : deviceType, device_version : deviceVersion,
+        user_face : 'img/sarah.png'
       };
       UserService.createUserOnServer(params)
         .then(function (result) {
-          UserService.createUserOnLocal({
-              user_id : result.user_id,
-              user_name : result.user_name,
-              device_id : result.device_id,
-              device_type : result.device_type,
-              device_version : result.device_version
-            })
+          UserService.createUserOnLocal(result)
             .then(function (result) {
               console.log('create user success', JSON.stringify(result));
-              $scope.userDataLoadCompleted = true;
-              $scope.modal.hide();
+              $scope.user = result;
+              $scope.userNameInpuModal.hide();
             }, function (error) {
-              console.error('create user on local error', JSON.stringify(error));
+              console.error('create user on local error : ', JSON.stringify(error));
             });
         }, function (error) {
-          console.error('create user on server error', JSON.stringify(error));
+          console.error('create user on server error : ', JSON.stringify(error));
         });
     };
   });

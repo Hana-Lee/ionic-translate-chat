@@ -19,10 +19,10 @@
 /*global angular, ionic, io, translateChat */
 angular.module('translate-chat.services', ['ionic'])
 
-  .service('UserService', function ($q, $sqliteService, Socket) {
+  .service('UserService', function ($q, $sqliteService, Device, Socket) {
     'use strict';
 
-    this.user = {};
+    this.user = undefined;
     this.users = [];
 
     this.createUserOnServer = function (userData) {
@@ -32,6 +32,7 @@ angular.module('translate-chat.services', ['ionic'])
 
       Socket.emit('createUser', userData);
       Socket.on('createdUser', function (data) {
+        Socket.removeListener('createdUser');
         if (data.error) {
           deferred.reject(data);
         } else {
@@ -39,6 +40,7 @@ angular.module('translate-chat.services', ['ionic'])
           localStorage.setItem('translate-chat-user-name', data.result.user_name);
           localStorage.setItem('translate-chat-device-id', data.result.device_id);
           localStorage.setItem('translate-chat-user-info', JSON.stringify(data.result));
+          this.user = data.result;
           deferred.resolve(data.result);
         }
       }.bind(this));
@@ -46,8 +48,28 @@ angular.module('translate-chat.services', ['ionic'])
     };
 
     this.get = function () {
-      this.user = JSON.parse(localStorage.getItem('translate-chat-user-info'));
-      return this.user;
+      console.log('get user');
+      var deferred = $q.defer();
+      var promise = deferred.promise;
+      if (!this.user) {
+        var deviceId = localStorage.getItem('translate-chat-device-id');
+        if (!deviceId) {
+          Device.getId();
+        }
+        console.log('get user execute query', deviceId);
+        $sqliteService.getFirstItem(translateChat.QUERIES.SELECT_USER_BY_DEVICE_ID, [deviceId])
+          .then(function (result) {
+            console.log('select user by device id result : ', result);
+            this.user = result;
+            deferred.resolve(result);
+          }.bind(this), function (error) {
+            console.error('select user by device id error : ', error);
+            deferred.reject(error);
+          });
+      } else {
+        deferred.resolve(this.user);
+      }
+      return promise;
     };
 
     this.createUserOnLocal = function (userData) {
@@ -57,10 +79,14 @@ angular.module('translate-chat.services', ['ionic'])
 
       $q.when($sqliteService.executeSql(
         translateChat.QUERIES.INSERT_USER,
-        [userData.user_id, userData.user_name, userData.device_id, userData.device_type, userData.device_version, '']
-      )).then(function (result) {
-        deferred.resolve(result);
-      }, function (error) {
+        [
+          userData.user_id, userData.user_name, userData.user_face, userData.device_id,
+          userData.device_type, userData.device_version, userData.socket_id
+        ]
+      )).then(function () {
+        this.user = userData;
+        deferred.resolve(userData);
+      }.bind(this), function (error) {
         deferred.reject(error);
       });
 
@@ -73,13 +99,16 @@ angular.module('translate-chat.services', ['ionic'])
 
       Socket.emit('retrieveAlreadyRegisteredUserByDeviceId', userData);
       Socket.on('retrievedAlreadyRegisteredUserByDeviceId', function (data) {
+        Socket.removeListener('retrievedAlreadyRegisteredUserByDeviceId');
+
         console.log('retrieveAlreadyRegisteredUserByDeviceIdOnServer result - service : ', JSON.stringify(data));
         if (data.error) {
           deferred.reject(data);
         } else {
+          this.user = data.result;
           deferred.resolve(data.result);
         }
-      });
+      }.bind(this));
 
       return promise;
     };
@@ -91,8 +120,9 @@ angular.module('translate-chat.services', ['ionic'])
       $q.when($sqliteService.getFirstItem(translateChat.QUERIES.SELECT_USER_BY_DEVICE_ID, [userData.device_id]))
         .then(function (result) {
           console.log('select user by device id result : ', JSON.stringify(result));
+          this.user = result;
           deferred.resolve(result);
-        }, function (error) {
+        }.bind(this), function (error) {
           console.log('select user by device id error : ', JSON.stringify(error));
           deferred.reject(error);
         });
@@ -101,14 +131,18 @@ angular.module('translate-chat.services', ['ionic'])
     };
 
     this.getAllUserFromServer = function (userData) {
+      console.log('get all user from server', this.users);
       var deferred = $q.defer();
       var promise = deferred.promise;
       Socket.emit('retrieveAllUsers');
       Socket.on('retrievedAllUsers', function (data) {
+        Socket.removeListener('retrievedAllUsers');
+
         if (data.error) {
           deferred.reject(data);
         } else {
           this.users = [];
+          console.log('retrieve all users : ', data.result);
           data.result.forEach(function (user) {
             console.log('user list', user, userData);
             if (user.user_id !== userData.user_id) {
@@ -130,28 +164,27 @@ angular.module('translate-chat.services', ['ionic'])
         if (deviceId) {
           return deviceId;
         }
-        if (ionic.Platform.isAndroid() || ionic.Platform.isIOS()) {
+        if (!ionic.Platform.isNativeBrowser) {
           try {
             return $cordovaDevice.getUUID();
-          } catch(e) {
+          } catch (e) {
             return null;
           }
         }
         return new Date().getTime().toString();
       },
       getVersion : function () {
-        console.log('platform version : ', window.navigator.userAgent);
-        if (ionic.Platform.isAndroid() || ionic.Platform.isIOS()) {
-          return ionic.Platform.version();
+        console.log('platform version : ', window.navigator.appVersion);
+        if (ionic.Platform.isNativeBrowser) {
+          return window.navigator.appVersion;
         }
-        return window.navigator.userAgent;
+        return ionic.Platform.version();
       },
       getType : function () {
-        console.log('platform type : ', window.navigator.userAgent, ionic.Platform.platform());
-        if (ionic.Platform.isAndroid() || ionic.Platform.isIOS()) {
-          return ionic.Platform.isAndroid() ? 'ANDROID' : 'IOS';
+        if (ionic.Platform.isNativeBrowser) {
+          return 'WEB_BROWSER';
         }
-        return window.navigator.userAgent;
+        return ionic.Platform.platform().toUpperCase();
       }
     };
   })
@@ -207,6 +240,7 @@ angular.module('translate-chat.services', ['ionic'])
             console.log('insert friend on local success : ', result);
             Socket.emit('createFriend', {user : userData, friend : friend});
             Socket.on('createdFriend', function (data) {
+              Socket.removeListener('createdFriend');
               console.log('creation friend on server', data);
               if (data.error) {
                 deferred.reject(data);
@@ -264,7 +298,7 @@ angular.module('translate-chat.services', ['ionic'])
     // if use promise then https://gist.github.com/jrthib/4ce016449a29811d71b5
     // var socket = io.connect('http://ihanalee.com:3000');
     var deviceId = Device.getId();
-    var socket = io.connect('http://192.168.200.114:3000', {query:'device_id=' + deviceId});
+    var socket = io.connect('http://192.168.200.114:3000', {query : 'device_id=' + deviceId});
 
     return socketFactory({
       ioSocket : socket
