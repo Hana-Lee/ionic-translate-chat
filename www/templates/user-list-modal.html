@@ -9,6 +9,7 @@
                 ng-repeat="user in users" ng-click="addFriend(user)">
         <img ng-src="{{user.user_face}}">
         <h2>{{user.user_name}}</h2>
+        <span>마지막접속 : </span><span am-time-ago="user.connection_time"></span>
       </ion-item>
     </ion-list>
   </ion-content>

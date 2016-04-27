@@ -104,7 +104,9 @@ angular.module('translate-chat.chatRooms-controller', [])
 
       function keydownHandler(event) {
         console.log('key down handler', event.keyCode);
-        cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
+        if (keyboardPluginAvailable()) {
+          cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
+        }
         if (event.keyCode === 13) {
           event.preventDefault();
           event.stopPropagation();

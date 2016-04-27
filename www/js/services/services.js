@@ -190,30 +190,107 @@ angular.module('translate-chat.services', ['ionic'])
     };
   })
 
-  .factory('Chats', function () {
+  .factory('Chats', function ($q, $sqliteService, Socket) {
     'use strict';
 
-    // Might use a resource here that returns a JSON array
-
-    // Some fake testing data
-    var chats = [{
-      id : 'f1d2067a7e0de9048b0a372653bf140b',
-      name : '구여신',
-      lastText : '사랑합니다.',
-      face : 'img/sarah.png'
-    }];
-
-    if (ionic.Platform.isAndroid()) {
-      chats[0].name = '이하나';
-      chats[0].face = 'img/hana.jpg';
-    }
+    var chats = [];
 
     return {
+      create : function () {
+        var deferred = $q.defer();
+        var promise = deferred.promise;
+        this.createOnServer().then(function (serverResult) {
+          console.log('create chat room on server complete : ', serverResult);
+          this.createOnLocal(serverResult.chat_room_id).then(function (localResult) {
+            console.log('create chat room on local complete : ', localResult);
+            deferred.resolve(serverResult.chat_room_id);
+          }, function (error) {
+            console.error('create chat room on local error : ', error);
+            deferred.reject(error);
+          });
+        }.bind(this), function (error) {
+          console.error('create chat room on server error : ', error);
+          deferred.reject(error);
+        });
+
+        return promise;
+      },
+      createOnServer : function () {
+        var deferred = $q.defer();
+        var promise = deferred.promise;
+        Socket.emit('createChatRoom');
+        Socket.on('createdChatRoom', function (data) {
+          Socket.removeListener('createdChatRoom');
+
+          if (data.error) {
+            deferred.reject(data.error);
+          } else {
+            deferred.resolve(data.result);
+          }
+        });
+
+        return promise;
+      },
+      createOnLocal : function (chatRoomId) {
+        var deferred = $q.defer();
+        var promise = deferred.promise;
+        $q.when($sqliteService.executeSql(translateChat.QUERIES.INSERT_CHAT_ROOM, [chatRoomId])).then(function (result) {
+          deferred.resolve(result);
+        }, function (error) {
+          deferred.reject(error);
+        });
+
+        return promise;
+      },
+      join : function (chatRoomId, user, friend) {
+        var deferred = $q.defer();
+        var promise = deferred.promise;
+        Socket.emit('joinChatRoom', {
+          chat_room_id : chatRoomId,
+          user_id : user.user_id,
+          user_name : user.user_name,
+          to_user_id : friend.user_id
+        });
+        Socket.on('joinedChatRoom', function (data) {
+          Socket.removeListener('joinedChatRoom');
+
+          if (data.error) {
+            console.error('joining chat room error : ', data.error);
+            deferred.reject(data.error);
+          } else {
+            deferred.resolve('OK');
+          }
+        });
+
+        return promise;
+      },
       all : function () {
         return chats;
       },
       remove : function (chat) {
         chats.splice(chats.indexOf(chat), 1);
+      },
+      getChatRoomIdByUserAndFriend : function (user, friend) {
+        var deferred = $q.defer();
+        var promise = deferred.promise;
+        Socket.emit('retrieveChatRoomIdByUserIdAndToUserId', {
+          user_id : user.user_id, to_user_id : friend.user_id
+        });
+        Socket.on('retrievedChatRoomIdByUserIdAndToUserId', function (data) {
+          Socket.removeListener('retrievedChatRoomIdByUserIdAndToUserId');
+
+          if (data.error) {
+            deferred.reject(data.error);
+          } else {
+            if (data.result && data.result.chat_room_id) {
+              deferred.resolve(data.result.chat_room_id);
+            } else {
+              deferred.reject('not data');
+            }
+          }
+        });
+
+        return promise;
       },
       get : function (chatId) {
         var chatsLength = chats.length;

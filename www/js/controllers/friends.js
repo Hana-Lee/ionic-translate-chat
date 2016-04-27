@@ -19,8 +19,9 @@
  */
 /*global angular, ionic, cordova */
 angular.module('translate-chat.friends-controller', ['ionic'])
-  .controller('FriendsCtrl', function ($ionicPlatform, $scope, $rootScope, $ionicTabsDelegate, Friends,
-                                       $ionicModal, UserService, Device, Socket, _) {
+  .controller('FriendsCtrl',
+    function ($ionicPlatform, $scope, $rootScope, $ionicTabsDelegate, Friends,
+              $location, $ionicModal, UserService, Chats, Device, Socket, _) {
     'use strict';
 
     $scope.friends = [];
@@ -187,5 +188,27 @@ angular.module('translate-chat.friends-controller', ['ionic'])
         }, function (error) {
           console.error('create user on server error : ', JSON.stringify(error));
         });
+    };
+
+    function joinChatRoom(chatRoomId, friend) {
+      Chats.join(chatRoomId, $scope.user, friend).then(function () {
+        $location.path('/tab/chats/' + chatRoomId);
+      }, function (error) {
+        console.log('joining chat room error : ', JSON.stringify(error));
+      });
+    }
+
+    $scope.joinChatRoom = function (friend) {
+      Chats.getChatRoomIdByUserAndFriend($scope.user, friend).then(function (result) {
+        joinChatRoom(result, friend);
+      }, function (error) {
+        console.error('get chat room id by user and friend error : ', JSON.stringify(error));
+
+        Chats.create().then(function (createdChatRoomId) {
+          joinChatRoom(createdChatRoomId, friend);
+        }, function (error) {
+          console.error('create chat room error : ', JSON.stringify(error));
+        });
+      });
     };
   });
