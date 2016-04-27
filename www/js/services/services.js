@@ -81,7 +81,8 @@ angular.module('translate-chat.services', ['ionic'])
         translateChat.QUERIES.INSERT_USER,
         [
           userData.user_id, userData.user_name, userData.user_face, userData.device_id,
-          userData.device_type, userData.device_version, userData.socket_id
+          userData.device_type, userData.device_version, userData.socket_id,
+          userData.connection_time, userData.created
         ]
       )).then(function () {
         this.user = userData;

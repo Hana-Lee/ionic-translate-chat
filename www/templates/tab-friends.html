@@ -9,7 +9,8 @@
         <img ng-src="{{friend.user_face}}">
         <h2>{{friend.user_name}}</h2>
         <span data-id="{{friend.user_id}}" class="hide"></span>
-        <p>마지막 메세지 : {{friend.last_time}}</p>
+        <p ng-hide="friend.connection_time !== ''">마지막 메세지 : {{friend.connection_time}}</p>
+        <span>마지막접속 : </span><span am-time-ago="friend.connection_time"></span>
         <ion-option-button class="button-assertive" ng-click="remove(friend)">
           삭제
         </ion-option-button>
