@@ -17,7 +17,7 @@
  node     : true,
  unparam  : true
  */
-/*global angular, ionic */
+/*global angular, ionic, cordova */
 angular.module('translate-chat.friends-controller', ['ionic'])
   .controller('FriendsCtrl', function ($ionicPlatform, $scope, $rootScope, $ionicTabsDelegate, Friends,
                                        $ionicModal, UserService, Device, Socket, _) {
@@ -127,6 +127,11 @@ angular.module('translate-chat.friends-controller', ['ionic'])
     }
 
     $scope.$on('$ionicView.enter', function () {
+      if (window.cordova && window.cordova.plugins && window.cordova.plugins.Keyboard) {
+        cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
+        cordova.plugins.Keyboard.disableScroll(true);
+      }
+
       if (initialize_done) {
         if (!$scope.user) {
           _initializeUserAndFriends();
@@ -139,10 +144,6 @@ angular.module('translate-chat.friends-controller', ['ionic'])
       scope : $scope,
       animation : 'slide-in-down'
     }).then(function (modal) {
-      $ionicPlatform.registerBackButtonAction(function (evt) {
-        evt.preventDefault();
-      }, 100);
-
       $scope.userNameInpuModal = modal;
     });
 
