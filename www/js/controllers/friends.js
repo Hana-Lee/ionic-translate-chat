@@ -39,6 +39,13 @@ angular.module('translate-chat.friends-controller', ['ionic'])
       }
     });
 
+    $scope.userNameInputKeyEvent = function (event) {
+      console.log('event :', event);
+      if (event.keyCode === 13) {
+        $scope.createUser();
+      }
+    };
+
     $scope.remove = function (user) {
       console.log('remove user', user);
     };
