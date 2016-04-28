@@ -3,10 +3,10 @@
     <ion-list>
       <ion-item class="item-remove-animate item-avatar item-icon-right item-text-wrap"
                 ng-repeat="chat in chats"
-                href="#/tab/chats/{{chat.chat_room_id}}">
-        <img ng-src="{{chat.friend_face}}">
-        <h2>{{chat.friend_name}}</h2>
-        <p>{{chat.last_text}}</p>
+                ng-click="joinChatRoom(chat)">
+        <img ng-src="{{chat.friend.user_face}}">
+        <h2>{{chat.friend.user_name}}</h2>
+        <p>마지막 메세지 : {{chat.last_text}}</p>
         <i class="icon ion-chevron-right icon-accessory"></i>
 
         <ion-option-button class="button-assertive" ng-click="remove(chat)">

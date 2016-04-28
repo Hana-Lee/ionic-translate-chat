@@ -34,8 +34,14 @@ angular.module('translate-chat.friends-controller', ['ionic'])
       if (data.error) {
         console.error('added friend error : ', data);
       } else {
-        Friends.addToLocal($scope.user, data.result).then(function () {
-          $scope.friends.push(data.result);
+        UserService.createUserOnLocal(data.result).then(function () {
+          Friends.addToLocal($scope.user, data.result).then(function () {
+            $scope.friends.push(data.result);
+          }, function (error) {
+            console.error('insert friend to local error : ', JSON.stringify(error));
+          });
+        }, function (error) {
+          console.error('insert friend to local user table error : ', JSON.stringify(error));
         });
       }
     });
@@ -103,6 +109,7 @@ angular.module('translate-chat.friends-controller', ['ionic'])
     function _initializeFriends(userData) {
       Friends.getAll(userData).then(function (result) {
         $scope.friends = result;
+        initialize_done = true;
       });
     }
 
@@ -141,11 +148,11 @@ angular.module('translate-chat.friends-controller', ['ionic'])
       }
 
       if (initialize_done) {
-        if (!$scope.user) {
+        if (!$scope.user.user_name) {
           _initializeUserAndFriends();
         }
       }
-      console.log('friend view enter');
+      console.log('friend view enter', initialize_done);
     });
 
     $ionicModal.fromTemplateUrl('templates/user-name-input-modal.html', {
@@ -192,7 +199,7 @@ angular.module('translate-chat.friends-controller', ['ionic'])
 
     function joinChatRoom(chatRoomId, friend) {
       Chats.join(chatRoomId, $scope.user, friend).then(function () {
-        $location.path('/tab/chats/' + chatRoomId);
+        $location.path('/tab/room/' + chatRoomId);
       }, function (error) {
         console.log('joining chat room error : ', JSON.stringify(error));
       });
@@ -200,6 +207,7 @@ angular.module('translate-chat.friends-controller', ['ionic'])
 
     $scope.joinChatRoom = function (friend) {
       Chats.getChatRoomIdByUserAndFriend($scope.user, friend).then(function (result) {
+        console.log('get chat room id by user and friend result : ', result);
         joinChatRoom(result, friend);
       }, function (error) {
         console.error('get chat room id by user and friend error : ', JSON.stringify(error));

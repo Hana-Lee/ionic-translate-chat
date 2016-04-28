@@ -22,7 +22,7 @@
 angular.module('translate-chat.chatRooms-controller', [])
   .controller('ChatRoomsCtrl',
     function ($scope, $rootScope, $state, $stateParams, MockService, $ionicActionSheet, $ionicPopup,
-              $ionicScrollDelegate, $timeout, $interval, Chats, $ionicTabsDelegate, Socket) {
+              $ionicScrollDelegate, $timeout, $interval, Chats, $ionicTabsDelegate, Socket, UserService) {
       'use strict';
 
       var messageCheckTimer;
@@ -34,41 +34,26 @@ angular.module('translate-chat.chatRooms-controller', [])
       var keyboardHeight = 0;
       var isAndroid = ionic.Platform.isAndroid();
 
-      $scope.chat = Chats.get($stateParams.chatId);
+      var chatRoomId = $stateParams.chatId;
+      var user = UserService.get();
+      $scope.user = {};
+      $scope.toUser = {};
+      user.then(function (result) {
+        $scope.user = result;
+        console.log('user ', $scope.user);
+        Chats.getToUser({user_id : $scope.user.user_id, chat_room_id : chatRoomId}).then(
+          function (result) {
+            $scope.toUser = result;
+            console.log('to user', result);
+          }, function (error) {
+            console.error('get to user error : ', JSON.stringify(error));
+          });
+      });
+
       $scope.messages = [];
 
-      if (isAndroid) {
-        // mock acquiring data via $stateParams
-        $scope.toUser = {
-          _id : '204adf928ce0ea2449d03a5d07707021',
-          // pic : 'http://ionicframework.com/img/docs/venkman.jpg',
-          user_name : '이하나'
-        };
-
-        // this could be on $rootScope rather than in $stateParams
-        $scope.user = {
-          _id : '6bd0303195b3ec9709149a095577e36f',
-          // pic : 'http://ionicframework.com/img/docs/mcfly.jpg',
-          user_name : '구여신'
-        };
-      } else {
-        // this could be on $rootScope rather than in $stateParams
-        $scope.toUser = {
-          _id : '6bd0303195b3ec9709149a095577e36f',
-          // pic : 'http://ionicframework.com/img/docs/mcfly.jpg',
-          user_name : '구여신'
-        };
-
-        // mock acquiring data via $stateParams
-        $scope.user = {
-          _id : '204adf928ce0ea2449d03a5d07707021',
-          // pic : 'http://ionicframework.com/img/docs/venkman.jpg',
-          user_name : '이하나'
-        };
-      }
-
       $scope.input = {
-        message : localStorage['userMessage-' + $scope.toUser._id] || ''
+        message : localStorage['userMessage-' + $scope.toUser.user_id] || ''
       };
 
       function keyboardPluginAvailable() {
@@ -82,7 +67,7 @@ angular.module('translate-chat.chatRooms-controller', [])
 
         $rootScope.hideTabs = true;
 
-        $timeout(function() {
+        $timeout(function () {
           if (isAndroid) {
             scroller.style.bottom = footerBar.clientHeight + 'px';
           } else {
@@ -96,7 +81,7 @@ angular.module('translate-chat.chatRooms-controller', [])
         console.log('Goodnight, sweet prince');
         keyboardHeight = 0;
 
-        $timeout(function() {
+        $timeout(function () {
           scroller.style.bottom = footerBar.clientHeight + 'px';
           viewScroll.scrollBottom(false);
         }, 0);
@@ -119,8 +104,9 @@ angular.module('translate-chat.chatRooms-controller', [])
         }
       }
 
-      $scope.$on('$ionicView.beforeEnter', function () {
+      $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
         $ionicTabsDelegate.showBar(false);
+        viewData.enableBack = true;
       });
 
       $scope.$on('$ionicView.enter', function () {
@@ -130,12 +116,13 @@ angular.module('translate-chat.chatRooms-controller', [])
 
         Socket.on('new message', function (data) {
           $scope.doneLoading = true;
-          var fromUserId = $scope.toUser._id;
+          var fromUserId = $scope.toUser.user_id;
           if (data.user_name === $scope.user.user_name) {
-            fromUserId = $scope.user._id;
+            fromUserId = $scope.user.user_id;
           }
+
           $scope.messages.push({
-            userId : fromUserId,
+            user_id : fromUserId,
             date : new Date(),
             text : data.message
           });
@@ -189,14 +176,14 @@ angular.module('translate-chat.chatRooms-controller', [])
         $ionicTabsDelegate.showBar(true);
 
         if (!$scope.input.message || $scope.input.message === '') {
-          localStorage.removeItem('userMessage-' + $scope.toUser._id);
+          localStorage.removeItem('userMessage-' + $scope.toUser.user_id);
         }
       });
 
       function getMessages() {
         // the service is mock but you would probably pass the toUser's GUID here
         MockService.getUserMessages({
-          toUserId : $scope.toUser._id
+          toUserId : $scope.toUser.user_id
         }).then(function (data) {
           $scope.doneLoading = true;
           $scope.messages = data.messages;
@@ -212,23 +199,22 @@ angular.module('translate-chat.chatRooms-controller', [])
         if (!newValue) {
           newValue = '';
         }
-        localStorage['userMessage-' + $scope.toUser._id] = newValue;
+        localStorage['userMessage-' + $scope.toUser.user_id] = newValue;
       });
 
       $scope.sendMessage = function (/*sendMessageForm*/) {
         var message = {
-          toId : $scope.toUser._id,
+          toId : $scope.toUser.user_id,
           text : $scope.input.message
         };
 
         //MockService.sendMessage(message).then(function(data) {
         $scope.input.message = '';
 
-        message._id = new Date().getTime(); // :~)
+        message.user_id = $scope.user.user_id;
         message.date = new Date();
         message.user_name = $scope.user.user_name;
-        message.userId = $scope.user._id;
-        message.pic = $scope.user.picture;
+        message.pic = $scope.user.user_face;
 
         $timeout(function () {
           $scope.messages.push(message);
@@ -279,14 +265,14 @@ angular.module('translate-chat.chatRooms-controller', [])
 
       // this prob seems weird here but I have reasons for this in my app, secret!
       $scope.viewProfile = function (msg) {
-        if (msg.userId === $scope.user._id) {
+        if (msg.userId === $scope.user.user_id) {
           // go to your profile
         } else {
           // go to other users profile
         }
       };
 
-      $scope.$on('elastic:resize', function(event, element, oldHeight, newHeight) {
+      $scope.$on('elastic:resize', function (event, element, oldHeight, newHeight) {
         // do stuff
         event.preventDefault();
 

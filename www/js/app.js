@@ -42,8 +42,7 @@ angular.module('translate-chat', [
       }
 
       $rootScope.env = {
-        DEVELOPMENT : true,
-        PRODUCTION : false
+        DEVELOPMENT : true
       };
 
       if ($rootScope.env.DEVELOPMENT) {
@@ -106,9 +105,9 @@ angular.module('translate-chat', [
         }
       })
       .state('tab.chat-room', {
-        url : '/chats/:chatId',
+        url : '/room/:chatId',
         views : {
-          'tab-chats' : {
+          'tab-chat-room' : {
             templateUrl : 'templates/chat-room.html',
             controller : 'ChatRoomsCtrl'
           }

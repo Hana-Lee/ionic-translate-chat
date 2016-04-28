@@ -1,6 +1,7 @@
 <ion-view id="userMessagesView"
-          cache-view="false"
-          view-title="<i class='icon ion-chatbubble user-messages-top-icon'></i><div class='msg-header-username'>{{toUser.username}}</div>">
+          cache-view="true"
+          hide-back-button="false"
+          view-title="<i class='icon ion-chatbubble user-messages-top-icon'></i><div class='msg-header-username'>{{toUser.user_name}}</div>">
 
   <div class="loader-center" ng-if="!doneLoading">
     <div class="loader">
@@ -12,21 +13,21 @@
                delegate-handle="userMessageScroll">
 
     <div ng-repeat="message in messages" class="message-wrapper" on-hold="onMessageHold($event, $index, message)">
-      <div ng-if="user._id !== message.userId">
+      <div ng-if="user.user_id !== message.user_id">
         <div class="chat-bubble left">
           <div class="message" ng-bind-html="message.text | nl2br" autolinker></div>
           <div class="message-detail">
-            <span ng-click="viewProfile(message)" class="bold">{{toUser.username}}</span>,
+            <span ng-click="viewProfile(message)" class="bold">{{toUser.user_name}}</span>,
             <span am-time-ago="message.date"></span>
           </div>
         </div>
       </div>
 
-      <div ng-if="user._id === message.userId">
+      <div ng-if="user.user_id === message.user_id">
         <div class="chat-bubble right">
           <div class="message" ng-bind-html="message.text | nl2br" autolinker></div>
           <div class="message-detail">
-            <span ng-click="viewProfile(message)" class="bold">{{user.username}}</span>,
+            <span ng-click="viewProfile(message)" class="bold">{{user.user_name}}</span>,
             <span am-time-ago="message.date"></span>
           </div>
         </div>

@@ -1,9 +1,9 @@
 #userMessagesView .scroll-content {
   /* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#deefff+0,98bede+100;Blue+3D+%2310 */
-  background: rgb(222,239,255); /* Old browsers */
-  background: -moz-linear-gradient(top,  rgba(222,239,255,1) 0%, rgba(152,190,222,1) 100%); /* FF3.6-15 */
-  background: -webkit-linear-gradient(top,  rgba(222,239,255,1) 0%,rgba(152,190,222,1) 100%); /* Chrome10-25,Safari5.1-6 */
-  background: linear-gradient(to bottom,  rgba(222,239,255,1) 0%,rgba(152,190,222,1) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+  background: url("../img/bg/heart-pattern5.gif"), rgb(222,239,255); /* Old browsers */
+  background: url("../img/bg/heart-pattern5.gif"), -moz-linear-gradient(top,  rgba(222,239,255,1) 0%, rgba(152,190,222,1) 100%); /* FF3.6-15 */
+  background: url("../img/bg/heart-pattern5.gif"), -webkit-linear-gradient(top,  rgba(222,239,255,1) 0%,rgba(152,190,222,1) 100%); /* Chrome10-25,Safari5.1-6 */
+  background: url("../img/bg/heart-pattern5.gif"), linear-gradient(to bottom,  rgba(222,239,255,1) 0%,rgba(152,190,222,1) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
   filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#deefff', endColorstr='#98bede',GradientType=0 ); /* IE6-9 */
 }
 
@@ -74,27 +74,28 @@ button.ion-android-send {
 .chat-bubble.left {
   background-color: whitesmoke;
   float: left;
+  box-shadow: 2px 2px 0 #FFBDCC;
 }
 
-.chat-bubble.left:before {
-  background-color: whitesmoke;
-  left: 10px;
-  -webkit-transform: rotate(70deg) skew(5deg);
-}
+/*.chat-bubble.left:before {*/
+  /*background-color: whitesmoke;*/
+  /*left: 10px;*/
+  /*-webkit-transform: rotate(70deg) skew(5deg);*/
+/*}*/
 
 .chat-bubble.right {
   background-color: #EFFDDE;
   /*color: #fff;*/
   float: right;
-  box-shadow: 2px 2px 0px #8abaa8;
+  box-shadow: 2px 2px 0 #8ABAA8;
 }
 
-.chat-bubble.right:before {
-  background-color: #EFFDDE;
-  right: 10px;
-  box-shadow: 1px -2px 0px #8abaa8;
-  -webkit-transform: rotate(118deg) skew(-5deg);
-}
+/*.chat-bubble.right:before {*/
+  /*background-color: #EFFDDE;*/
+  /*right: 10px;*/
+  /*box-shadow: 1px -2px 0px #8abaa8;*/
+  /*-webkit-transform: rotate(118deg) skew(-5deg);*/
+/*}*/
 
 .chat-bubble.right a.autolinker {
   /*color: #fff;*/

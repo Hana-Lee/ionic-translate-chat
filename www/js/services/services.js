@@ -72,6 +72,46 @@ angular.module('translate-chat.services', ['ionic'])
       return promise;
     };
 
+    this.getByUserId = function (userId) {
+      var deferred = $q.defer();
+      var promise = deferred.promise;
+
+      this.getByUserIdFromLocal(userId).then(function (result) {
+        deferred.resolve(result);
+      }, function (localError) {
+        console.error('get user by user id from local error : ', localError);
+        this.getByUserIdFromServer(userId).then(function (result) {
+          deferred.resolve(result);
+        }, function (serverError) {
+          console.error('get user by user id from server error : ', serverError);
+          deferred.reject(serverError);
+        });
+      }.bind(this));
+
+      return promise;
+    };
+    this.getByUserIdFromLocal = function (userId) {
+      return $q.when($sqliteService.getFirstItem(translateChat.QUERIES.SELECT_USER_BY_USER_ID, [userId]));
+    };
+
+    this.getByUserIdFromServer = function (userId) {
+      var deferred = $q.defer();
+      var promise = deferred.promise;
+      console.log('user id ', userId);
+      Socket.emit('retrieveUserByUserId', {user_id : userId});
+      Socket.on('retrievedUserByUserId', function (data) {
+        Socket.removeListener('retrievedUserByUserId');
+
+        if (data.error) {
+          deferred.reject(data.error);
+        } else {
+          deferred.resolve(data.result);
+        }
+      });
+
+      return promise;
+    };
+
     this.createUserOnLocal = function (userData) {
       console.log('create user on local', userData);
       var deferred = $q.defer();
@@ -190,10 +230,13 @@ angular.module('translate-chat.services', ['ionic'])
     };
   })
 
-  .factory('Chats', function ($q, $sqliteService, Socket) {
+  .factory('Chats', function ($q, $sqliteService, Socket, _, Friends, UserService) {
     'use strict';
 
+    console.log('chats factory');
+
     var chats = [];
+    var chatRoomIds = [];
 
     return {
       create : function () {
@@ -203,6 +246,7 @@ angular.module('translate-chat.services', ['ionic'])
           console.log('create chat room on server complete : ', serverResult);
           this.createOnLocal(serverResult.chat_room_id).then(function (localResult) {
             console.log('create chat room on local complete : ', localResult);
+            chatRoomIds.push(serverResult.chat_room_id);
             deferred.resolve(serverResult.chat_room_id);
           }, function (error) {
             console.error('create chat room on local error : ', error);
@@ -258,14 +302,60 @@ angular.module('translate-chat.services', ['ionic'])
             console.error('joining chat room error : ', data.error);
             deferred.reject(data.error);
           } else {
+            var chat = [{
+              friend : friend,
+              chat_room_id : chatRoomId,
+              last_text : ''
+            }];
+            if (chats.length === 0) {
+              chats = chat;
+            } else {
+              chats = _.uniq(_.union(chats, chat), false, function (item) {
+                return item.chat_room_id;
+              });
+            }
             deferred.resolve('OK');
           }
         });
 
         return promise;
       },
-      all : function () {
-        return chats;
+      all : function (userData) {
+        var deferred = $q.defer();
+        var promise = deferred.promise;
+
+        if (chats.length === 0) {
+          Friends.getAll(userData).then(function (result) {
+            console.log('result : ', result);
+            Socket.emit('retrieveAllChatRoomIdsAndFriendIdAndLastTextByUserId', userData);
+            Socket.on('retrievedAllChatRoomIdsAndFriendIdAndLastTextByUserId', function (data) {
+              Socket.removeListener('retrievedAllChatRoomIdsAndFriendIdAndLastTextByUserId');
+              console.log('data : ', data);
+              if (data.error) {
+                deferred.reject(data.error);
+              } else if (data.result) {
+                data.result.forEach(function (r) {
+                  var friend = _.find(result, function (f) {
+                    return r.friend_id === f.user_id;
+                  });
+                  chats.push({
+                    friend : friend,
+                    chat_room_id : r.chat_room_id,
+                    last_text : r.last_text
+                  });
+                });
+                deferred.resolve(chats);
+              } else {
+                chats = [];
+                deferred.resolve([]);
+              }
+            });
+          }, function (error) {
+            console.log('get friends error : ', error);
+            deferred.reject(error);
+          });
+        }
+        return promise;
       },
       remove : function (chat) {
         chats.splice(chats.indexOf(chat), 1);
@@ -292,6 +382,63 @@ angular.module('translate-chat.services', ['ionic'])
 
         return promise;
       },
+      getToUser : function (userData) {
+        var deferred = $q.defer();
+        var promise = deferred.promise;
+        this.getToUserIdFromLocal(userData).then(function (localResult) {
+          UserService.getByUserId(localResult.user_id).then(function (result) {
+            deferred.resolve(result);
+          }, function (error) {
+            console.error('get by user id error : ', error);
+            deferred.reject(error);
+          });
+        }.bind(this), function (localError) {
+          console.error('get to user from local error : ', localError);
+          this.getToUserIdFromServer(userData).then(function (serverResult) {
+            UserService.getByUserId(serverResult.user_id).then(function (result) {
+              deferred.resolve(result);
+            }, function (error) {
+              console.error('get by user id error : ', error);
+              deferred.reject(error);
+            });
+          }, function (serverError) {
+            console.error('get to user from server error : ', serverError);
+          });
+        }.bind(this));
+
+        return promise;
+      },
+      getToUserIdFromLocal : function (userData) {
+        var deferred = $q.defer();
+        var promise = deferred.promise;
+        $q.when($sqliteService.getFirstItem(
+          translateChat.QUERIES.SELECT_TO_USER_ID_BY_CHAT_ROOM_ID_AND_USER_ID, [userData.chat_room_id, userData.user_id])
+        ).then(function (result) {
+          deferred.resolve(result);
+        }, function (error) {
+          deferred.reject(error);
+        });
+        return promise;
+      },
+      getToUserIdFromServer : function (userData) {
+        var deferred = $q.defer();
+        var promise = deferred.promise;
+
+        Socket.emit('retrieveToUserIdByChatRoomIdAndUserId', {
+          chat_room_id : userData.chat_room_id, user_id : userData.user_id
+        });
+        Socket.on('retrievedToUserIdByChatRoomIdAndUserId', function (data) {
+          Socket.removeListener('retrievedToUserIdByChatRoomIdAndUserId');
+
+          if (data.error) {
+            deferred.reject(data.error);
+          } else {
+            deferred.resolve(data.result);
+          }
+        });
+
+        return promise;
+      },
       get : function (chatId) {
         var chatsLength = chats.length;
         var i;
@@ -313,23 +460,35 @@ angular.module('translate-chat.services', ['ionic'])
       add : function (userData, friend) {
         var deferred = $q.defer();
         var promise = deferred.promise;
-        $q.when($sqliteService.executeSql(translateChat.QUERIES.INSERT_FRIEND, [userData.user_id, friend.user_id]))
-          .then(function (result) {
-            console.log('insert friend on local success : ', result);
-            Socket.emit('createFriend', {user : userData, friend : friend});
-            Socket.on('createdFriend', function (data) {
-              Socket.removeListener('createdFriend');
-              console.log('creation friend on server', data);
-              if (data.error) {
-                deferred.reject(data);
-              } else {
-                deferred.resolve(result);
-              }
-            });
-          }, function (error) {
-            console.log('insert friend on local error : ', JSON.stringify(error));
-            deferred.reject(error);
+        this.addToServer(userData, friend).then(function (serverResult) {
+          console.log('create friend on server success : ', serverResult);
+          this.addToLocal(userData, friend).then(function (localResult) {
+            console.log('create friend on local success : ', localResult);
+            deferred.resolve(localResult);
+          }, function (localError) {
+            console.error('create friend on local error : ', localError);
+            deferred.reject(localError);
           });
+        }.bind(this), function (serverError) {
+          console.error('create friend on server error : ', JSON.stringify(serverError));
+          deferred.reject(serverError);
+        });
+
+        return promise;
+      },
+      addToServer : function (userData, friend) {
+        var deferred = $q.defer();
+        var promise = deferred.promise;
+        Socket.emit('createFriend', {user : userData, friend : friend});
+        Socket.on('createdFriend', function (data) {
+          Socket.removeListener('createdFriend');
+          console.log('creation friend on server', data);
+          if (data.error) {
+            deferred.reject(data);
+          } else {
+            deferred.resolve(data);
+          }
+        });
 
         return promise;
       },
@@ -340,7 +499,7 @@ angular.module('translate-chat.services', ['ionic'])
           .then(function (result) {
             deferred.resolve(result);
           }, function (error) {
-            console.log('insert friend on local error : ', JSON.stringify(error));
+            console.error('create friend on local error : ', JSON.stringify(error));
             deferred.reject(error);
           });
 
@@ -354,6 +513,7 @@ angular.module('translate-chat.services', ['ionic'])
             console.log('get all friend : ', result);
             deferred.resolve(result);
           }, function (error) {
+            console.error('get all friend error : ', error);
             deferred.reject(error);
           });
 

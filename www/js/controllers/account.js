@@ -33,6 +33,11 @@ angular.module('translate-chat.account-controller', [])
 
     $scope.$on('$ionicView.enter', function () {
       console.log('account view enter');
+      if (!$scope.user.user_name) {
+        UserService.get().then(function (result) {
+          $scope.user = result;
+        });
+      }
     });
 
     console.log('user information : ', $scope.user);
