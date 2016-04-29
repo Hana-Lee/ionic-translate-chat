@@ -222,7 +222,7 @@ angular.module('translate-chat.chatRooms-controller', [])
           $scope.messages.push(message);
           viewScroll.scrollBottom(true);
 
-          Socket.emit('new_message', message.text);
+          Socket.emit('new_message', {type : 'text', text : message.text});
         }, 500);
       };
 
