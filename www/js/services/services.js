@@ -125,7 +125,6 @@ angular.module('translate-chat.services', ['ionic'])
           userData.connection_time, userData.created
         ]
       )).then(function () {
-        this.user = userData;
         deferred.resolve(userData);
       }.bind(this), function (error) {
         deferred.reject(error);

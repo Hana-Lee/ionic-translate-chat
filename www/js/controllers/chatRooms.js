@@ -21,20 +21,19 @@
 
 angular.module('translate-chat.chatRooms-controller', [])
   .controller('ChatRoomsCtrl',
-    function ($scope, $rootScope, $state, $stateParams, MockService, $ionicActionSheet, $ionicPopup,
-              $ionicScrollDelegate, $timeout, $interval, Chats, $ionicTabsDelegate, Socket, UserService) {
+    function ($scope, $rootScope, $state, $stateParams, MessageService, $ionicActionSheet,
+              $ionicPopup, $ionicScrollDelegate, $timeout, $interval, Chats,
+              $ionicTabsDelegate, Socket, UserService, $ionicHistory, _) {
       'use strict';
 
-      var messageCheckTimer;
-
       var viewScroll = $ionicScrollDelegate.$getByHandle('userMessageScroll');
-      var footerBar; // gets set in $ionicView.enter
+      var footerBar;
       var scroller;
-      var txtInput; // ^^^
+      var txtInput;
       var keyboardHeight = 0;
       var isAndroid = ionic.Platform.isAndroid();
-
-      var chatRoomId = $stateParams.chatId;
+      var chatRoomId = $stateParams.chatRoomId;
+      var backViewId = $stateParams.backViewId;
       var user = UserService.get();
       $scope.user = {};
       $scope.toUser = {};
@@ -60,7 +59,6 @@ angular.module('translate-chat.chatRooms-controller', [])
         return window.cordova && window.cordova.plugins && window.cordova.plugins.Keyboard;
       }
 
-      // TODO 입력 버튼 제거, 키보드의 엔터로 메세지 입력되게 변경하여 키보드 show, hide 문제 해결하기
       function keyboardShowHandler(event) {
         console.log('keyboardShowHandler');
         keyboardHeight = event.keyboardHeight;
@@ -104,32 +102,60 @@ angular.module('translate-chat.chatRooms-controller', [])
         }
       }
 
+      function getMessages() {
+        // the service is mock but you would probably pass the toUser's GUID here
+        MessageService.getUserMessages(chatRoomId).then(function (data) {
+          $scope.doneLoading = true;
+          $scope.messages = data;
+
+          $timeout(function () {
+            viewScroll.scrollBottom(false);
+          }, 0);
+        }, function (error) {
+          console.error('get user messages error : ', error);
+        });
+      }
+
       $scope.$on('$ionicView.beforeEnter', function (event, viewData) {
         $ionicTabsDelegate.showBar(false);
         viewData.enableBack = true;
+        var currentViewStateName = $ionicHistory.viewHistory().currentView.stateName;
+        var backView = _.find($ionicHistory.viewHistory().views, function (view) {
+          return view.viewId === backViewId;
+        });
+        console.log('back view ', backView);
+        if (backView && (currentViewStateName !== backView.stateName)) {
+          $ionicHistory.backView(backView);
+        } else {
+          $rootScope.$ionicGoBack = function () {
+            $state.go('tab.friends');
+          };
+        }
       });
 
       $scope.$on('$ionicView.enter', function () {
         console.log('ChatRooms $ionicView.enter');
 
-        Socket.emit('add user', {user_name : $scope.user.user_name});
-
-        Socket.on('new message', function (data) {
+        Socket.on('new_message', function (data) {
           $scope.doneLoading = true;
-          var fromUserId = $scope.toUser.user_id;
-          if (data.user_name === $scope.user.user_name) {
-            fromUserId = $scope.user.user_id;
+          if (data.error) {
+            console.error('new message receive error : ', data.error);
+          } else {
+            var fromUserId = $scope.toUser.user_id;
+            if (data.result.user_name === $scope.user.user_name) {
+              fromUserId = $scope.user.user_id;
+            }
+
+            $scope.messages.push({
+              user_id : fromUserId,
+              date : new Date(),
+              text : data.result.message
+            });
+
+            $timeout(function () {
+              viewScroll.scrollBottom(false);
+            }, 0);
           }
-
-          $scope.messages.push({
-            user_id : fromUserId,
-            date : new Date(),
-            text : data.message
-          });
-
-          $timeout(function () {
-            viewScroll.scrollBottom(false);
-          }, 0);
         });
 
         window.addEventListener('native.keyboardshow', keyboardShowHandler);
@@ -140,7 +166,7 @@ angular.module('translate-chat.chatRooms-controller', [])
           cordova.plugins.Keyboard.disableScroll(true);
         }
 
-        // getMessages();
+        getMessages();
 
         $timeout(function () {
           footerBar = document.body.querySelector('#userMessagesView .bar-footer');
@@ -149,10 +175,6 @@ angular.module('translate-chat.chatRooms-controller', [])
 
           txtInput.on('keydown', keydownHandler);
         }, 0);
-
-        messageCheckTimer = $interval(function () {
-          // here you could check for new messages if your app doesn't use push notifications or user disabled them
-        }, 20000);
       });
 
       $scope.$on('$ionicView.leave', function () {
@@ -164,12 +186,6 @@ angular.module('translate-chat.chatRooms-controller', [])
         if (keyboardPluginAvailable()) {
           cordova.plugins.Keyboard.disableScroll(false);
         }
-
-        // Make sure that the interval is destroyed
-        if (angular.isDefined(messageCheckTimer)) {
-          $interval.cancel(messageCheckTimer);
-          messageCheckTimer = undefined;
-        }
       });
 
       $scope.$on('$ionicView.beforeLeave', function () {
@@ -179,20 +195,6 @@ angular.module('translate-chat.chatRooms-controller', [])
           localStorage.removeItem('userMessage-' + $scope.toUser.user_id);
         }
       });
-
-      function getMessages() {
-        // the service is mock but you would probably pass the toUser's GUID here
-        MockService.getUserMessages({
-          toUserId : $scope.toUser.user_id
-        }).then(function (data) {
-          $scope.doneLoading = true;
-          $scope.messages = data.messages;
-
-          $timeout(function () {
-            viewScroll.scrollBottom(false);
-          }, 0);
-        });
-      }
 
       $scope.$watch('input.message', function (newValue/*, oldValue*/) {
         console.log('input.message $watch, newValue "' + newValue + '"', arguments);
@@ -208,7 +210,6 @@ angular.module('translate-chat.chatRooms-controller', [])
           text : $scope.input.message
         };
 
-        //MockService.sendMessage(message).then(function(data) {
         $scope.input.message = '';
 
         message.user_id = $scope.user.user_id;
@@ -220,15 +221,8 @@ angular.module('translate-chat.chatRooms-controller', [])
           $scope.messages.push(message);
           viewScroll.scrollBottom(true);
 
-          Socket.emit('new message', message.text);
+          Socket.emit('new_message', message.text);
         }, 500);
-
-        // $timeout(function () {
-        //   $scope.messages.push(MockService.getMockMessage());
-        //   viewScroll.scrollBottom(true);
-        // }, 2000);
-
-        //});
       };
 
       $scope.onMessageHold = function (event, itemIndex, message) {
@@ -239,37 +233,17 @@ angular.module('translate-chat.chatRooms-controller', [])
         $ionicActionSheet.show({
           buttons : [{
             text : 'Copy Text'
-          }, {
-            text : 'Delete Message'
           }],
           buttonClicked : function (index) {
             switch (index) {
-              case 0: // Copy Text
-                //cordova.plugins.clipboard.copy(message.text);
-
-                break;
-              case 1: // Delete
-                // no server side secrets here :~)
-                $scope.messages.splice(itemIndex, 1);
-                $timeout(function () {
-                  viewScroll.resize();
-                }, 0);
-
+              case 0:
+                cordova.plugins.clipboard.copy(message.text);
                 break;
             }
 
             return true;
           }
         });
-      };
-
-      // this prob seems weird here but I have reasons for this in my app, secret!
-      $scope.viewProfile = function (msg) {
-        if (msg.userId === $scope.user.user_id) {
-          // go to your profile
-        } else {
-          // go to other users profile
-        }
       };
 
       $scope.$on('elastic:resize', function (event, element, oldHeight, newHeight) {
@@ -303,46 +277,33 @@ angular.module('translate-chat.chatRooms-controller', [])
     })
 
   // services
-  .factory('MockService', ['$http', '$q',
-    function ($http, $q) {
+  .factory('MessageService', function ($http, $q, Socket) {
       'use strict';
       var me = {};
 
-      me.getUserMessages = function (d) {
-        /*
-         var endpoint =
-         'http://www.mocky.io/v2/547cf341501c337f0c9a63fd?callback=JSON_CALLBACK';
-         return $http.jsonp(endpoint).then(function(response) {
-         return response.data;
-         }, function(err) {
-         console.log('get user messages error, err: ' + JSON.stringify(
-         err, null, 2));
-         });
-         */
+      me.getUserMessages = function (chatRoomId) {
         var deferred = $q.defer();
 
-        setTimeout(function () {
-          deferred.resolve(getMockMessages());
-        }, 1500);
+        Socket.emit('retrieveAllChatMessagesByChatRoomId', {
+          chat_room_id : chatRoomId
+        });
+        Socket.on('retrievedAllChatMessagesByChatRoomId', function (data) {
+          Socket.removeListener('retrievedAllChatMessagesByChatRoomId');
+
+          if (data.error) {
+            deferred.reject(data.error);
+          } else {
+            deferred.resolve(data.result);
+          }
+        });
 
         return deferred.promise;
       };
 
-      me.getMockMessage = function () {
-        return {
-          userId : '534b8e5aaa5e7afc1b23e69b',
-          date : new Date(),
-          text : 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.'
-        };
-      };
-
       return me;
-    }
-  ])
+    })
 
-  // fitlers
-  .filter('nl2br', ['$filter',
-    function ($filter) {
+  .filter('nl2br', function () {
       'use strict';
       return function (data) {
         if (!data) {
@@ -350,12 +311,9 @@ angular.module('translate-chat.chatRooms-controller', [])
         }
         return data.replace(/\n\r?/g, '<br />');
       };
-    }
-  ])
+    })
 
-  // directives
-  .directive('autolinker', ['$timeout',
-    function ($timeout) {
+  .directive('autolinker', function ($timeout) {
       'use strict';
       return {
         restrict : 'A',
@@ -375,99 +333,24 @@ angular.module('translate-chat.chatRooms-controller', [])
             element.html(text);
 
             var autolinks = element[0].getElementsByClassName('autolinker');
+            var autolinksLength = autolinks.length;
             var i;
-            for (i = 0; i < autolinks.length; i++) {
-              angular.element(autolinks[i]).bind('click', function (e) {
-                var href = e.target.href;
-                console.log('autolinkClick, href: ' + href);
+            function onLinkClick(e) {
+              var href = e.target.href;
+              console.log('autolinkClick, href: ' + href);
 
-                if (href) {
-                  //window.open(href, '_system');
-                  window.open(href, '_blank');
-                }
+              if (href) {
+                //window.open(href, '_system');
+                window.open(href, '_blank');
+              }
 
-                e.preventDefault();
-                return false;
-              });
+              e.preventDefault();
+              return false;
+            }
+            for (i = 0; i < autolinksLength; i++) {
+              angular.element(autolinks[i]).bind('click', onLinkClick);
             }
           }, 0);
         }
-      }
-    }
-  ]);
-
-function getMockMessages() {
-  return {
-    "messages" : [{
-      "_id" : "535d625f898df4e80e2a125e",
-      "text" : "Ionic has changed the game for hybrid app development.",
-      "userId" : "534b8fb2aa5e7afc1b23e69c",
-      "date" : "2014-04-27T20:02:39.082Z",
-      "read" : true,
-      "readDate" : "2014-12-01T06:27:37.944Z"
-    }, {
-      "_id" : "535f13ffee3b2a68112b9fc0",
-      "text" : "I like Ionic better than ice cream!",
-      "userId" : "534b8e5aaa5e7afc1b23e69b",
-      "date" : "2014-04-29T02:52:47.706Z",
-      "read" : true,
-      "readDate" : "2014-12-01T06:27:37.944Z"
-    }, {
-      "_id" : "546a5843fd4c5d581efa263a",
-      "text" : "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-      "userId" : "534b8fb2aa5e7afc1b23e69c",
-      "date" : "2014-11-17T20:19:15.289Z",
-      "read" : true,
-      "readDate" : "2014-12-01T06:27:38.328Z"
-    }, {
-      "_id" : "54764399ab43d1d4113abfd1",
-      "text" : "Am I dreaming?",
-      "userId" : "534b8e5aaa5e7afc1b23e69b",
-      "date" : "2014-11-26T21:18:17.591Z",
-      "read" : true,
-      "readDate" : "2014-12-01T06:27:38.337Z"
-    }, {
-      "_id" : "547643aeab43d1d4113abfd2",
-      "text" : "Is this magic?",
-      "userId" : "534b8fb2aa5e7afc1b23e69c",
-      "date" : "2014-11-26T21:18:38.549Z",
-      "read" : true,
-      "readDate" : "2014-12-01T06:27:38.338Z"
-    }, {
-      "_id" : "547815dbab43d1d4113abfef",
-      "text" : "Gee wiz, this is something special.",
-      "userId" : "534b8e5aaa5e7afc1b23e69b",
-      "date" : "2014-11-28T06:27:40.001Z",
-      "read" : true,
-      "readDate" : "2014-12-01T06:27:38.338Z"
-    }, {
-      "_id" : "54781c69ab43d1d4113abff0",
-      "text" : "I think I like Ionic more than I like ice cream!",
-      "userId" : "534b8fb2aa5e7afc1b23e69c",
-      "date" : "2014-11-28T06:55:37.350Z",
-      "read" : true,
-      "readDate" : "2014-12-01T06:27:38.338Z"
-    }, {
-      "_id" : "54781ca4ab43d1d4113abff1",
-      "text" : "Yea, it's pretty sweet",
-      "userId" : "534b8e5aaa5e7afc1b23e69b",
-      "date" : "2014-11-28T06:56:36.472Z",
-      "read" : true,
-      "readDate" : "2014-12-01T06:27:38.338Z"
-    }, {
-      "_id" : "5478df86ab43d1d4113abff4",
-      "text" : "Wow, this is really something huh?",
-      "userId" : "534b8fb2aa5e7afc1b23e69c",
-      "date" : "2014-11-28T20:48:06.572Z",
-      "read" : true,
-      "readDate" : "2014-12-01T06:27:38.339Z"
-    }, {
-      "_id" : "54781ca4ab43d1d4113abff1",
-      "text" : "Create amazing apps - ionicframework.com",
-      "userId" : "534b8e5aaa5e7afc1b23e69b",
-      "date" : "2014-11-29T06:56:36.472Z",
-      "read" : true,
-      "readDate" : "2014-12-01T06:27:38.338Z"
-    }], "unread" : 0
-  };
-}
+      };
+    });

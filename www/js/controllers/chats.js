@@ -19,7 +19,7 @@
 /*global angular */
 
 angular.module('translate-chat.chats-controller', [])
-  .controller('ChatsCtrl', function ($scope, Chats, UserService, $location) {
+  .controller('ChatsCtrl', function ($scope, Chats, UserService, $state, $ionicHistory) {
     'use strict';
 
     $scope.chats = [];
@@ -34,7 +34,8 @@ angular.module('translate-chat.chats-controller', [])
 
     $scope.joinChatRoom = function(chat) {
       Chats.join(chat.chat_room_id, $scope.user, chat.friend).then(function () {
-        $location.path('/tab/room/' + chat.chat_room_id);
+        var viewId = $ionicHistory.viewHistory().currentView.viewId;
+        $state.go('tab.chat-room', {chatRoomId : chat.chat_room_id, backViewId : viewId});
       }, function (error) {
         console.log('joining chat room error : ', JSON.stringify(error));
       });

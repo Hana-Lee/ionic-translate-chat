@@ -17,7 +17,7 @@
         <div class="chat-bubble left">
           <div class="message" ng-bind-html="message.text | nl2br" autolinker></div>
           <div class="message-detail">
-            <span ng-click="viewProfile(message)" class="bold">{{toUser.user_name}}</span>,
+            <span class="bold">{{toUser.user_name}}</span>,
             <span am-time-ago="message.date"></span>
           </div>
         </div>
@@ -27,7 +27,7 @@
         <div class="chat-bubble right">
           <div class="message" ng-bind-html="message.text | nl2br" autolinker></div>
           <div class="message-detail">
-            <span ng-click="viewProfile(message)" class="bold">{{user.user_name}}</span>,
+            <span class="bold">{{user.user_name}}</span>,
             <span am-time-ago="message.date"></span>
           </div>
         </div>
@@ -41,7 +41,7 @@
   <form name="sendMessageForm" ng-submit="sendMessage(sendMessageForm)" novalidate>
     <ion-footer-bar class="bar-stable item-input-inset message-footer" keyboard-attach>
       <label class="item-input-wrapper">
-        <textarea ng-model="input.message" value=""
+        <textarea ng-model="input.message"
                   placeholder="메시지" required
                   minlength="1" maxlength="1500" msd-elastic></textarea>
       </label>
