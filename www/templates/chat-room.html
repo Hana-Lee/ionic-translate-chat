@@ -15,7 +15,10 @@
     <div ng-repeat="message in messages" class="message-wrapper" on-hold="onMessageHold($event, $index, message)">
       <div ng-if="user.user_id !== message.user_id">
         <div class="chat-bubble left">
-          <div class="message" ng-bind-html="message.text | nl2br" autolinker></div>
+          <div ng-show="message.type === 'image'" class="message">
+            <img ng-src="message.text">
+          </div>
+          <div ng-show="message.type === 'text'" class="message" ng-bind-html="message.text | nl2br" autolinker></div>
           <div class="message-detail">
             <span class="bold">{{toUser.user_name}}</span>,
             <span am-time-ago="message.date"></span>
@@ -25,7 +28,10 @@
 
       <div ng-if="user.user_id === message.user_id">
         <div class="chat-bubble right">
-          <div class="message" ng-bind-html="message.text | nl2br" autolinker></div>
+          <div ng-show="message.type === 'image'" class="message">
+            <img ng-src="message.text">
+          </div>
+          <div ng-show="message.type === 'text'" class="message" ng-bind-html="message.text | nl2br" autolinker></div>
           <div class="message-detail">
             <span class="bold">{{user.user_name}}</span>,
             <span am-time-ago="message.date"></span>

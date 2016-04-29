@@ -149,7 +149,8 @@ angular.module('translate-chat.chatRooms-controller', [])
             $scope.messages.push({
               user_id : fromUserId,
               date : new Date(),
-              text : data.result.message
+              text : data.result.text,
+              type : data.result.type
             });
 
             $timeout(function () {
