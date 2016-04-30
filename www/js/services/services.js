@@ -535,7 +535,9 @@ angular.module('translate-chat.services', ['ionic'])
     // if use promise then https://gist.github.com/jrthib/4ce016449a29811d71b5
     // var socket = io.connect('http://ihanalee.com:3000');
     var deviceId = Device.getId();
-    var socket = io.connect('http://192.168.200.114:3000', {query : 'device_id=' + deviceId});
+    // var server = 'http://192.168.200.114:3000';
+    var server = 'http://172.30.1.47:3000';
+    var socket = io.connect(server, {query : 'device_id=' + deviceId});
 
     return socketFactory({
       ioSocket : socket

@@ -59,6 +59,14 @@ angular.module('translate-chat', [
       }, function (error) {
         console.error('preload database error', JSON.stringify(error));
       });
+
+      var push = new Ionic.Push({
+        "debug": true
+      });
+      push.register(function(token) {
+        console.log("Device token:",token.token);
+        push.saveToken(token);  // persist the token in the Ionic Platform
+      });
     });
   })
 

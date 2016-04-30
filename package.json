@@ -21,10 +21,23 @@
     "cordova-plugin-splashscreen",
     "cordova-plugin-statusbar",
     "ionic-plugin-keyboard",
-    "ionic-plugin-deploy"
+    "ionic-plugin-deploy",
+    {
+      "variables": {
+        "SENDER_ID": "456389532659"
+      },
+      "locator": "phonegap-plugin-push"
+    },
+    {
+      "variables": {
+        "SENDER_ID": "456389532659"
+      },
+      "locator": "phonegap-plugin-push",
+      "id": "phonegap-plugin-push"
+    }
   ],
   "cordovaPlatforms": [
-    "android",
-    "ios"
+    "ios",
+    "android"
   ]
 }

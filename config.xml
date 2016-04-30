@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<widget id="com.ionicframework.ionictranslatechat321490" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+<widget id="com.ihanalee.ionictranslatechat" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
   <name>번역채팅</name>
   <description>
         An Ionic Framework and Cordova project.
     </description>
-  <author email="i@leehana.co.kr" href="http://leehana.co.kr">
+  <author email="i@leehana.co.kr" href="http://ihanalee.com">
       Hana Lee
     </author>
   <content src="index.html"/>
@@ -27,6 +27,9 @@
   <plugin name="cordova-plugin-statusbar" spec="~2.1.2"/>
   <plugin name="ionic-plugin-keyboard" spec="~2.0.1"/>
   <plugin name="cordova-sqlite-ext" spec="https://github.com/litehelpers/cordova-sqlite-ext"/>
+  <plugin name="phonegap-plugin-push" spec="1.6.0">
+    <variable name="SENDER_ID" value="456389532659" />
+  </plugin>
   <platform name="android">
     <icon src="resources/android/icon/drawable-ldpi-icon.png" density="ldpi"/>
     <icon src="resources/android/icon/drawable-mdpi-icon.png" density="mdpi"/>
