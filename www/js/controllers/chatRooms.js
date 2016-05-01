@@ -148,7 +148,7 @@ angular.module('translate-chat.chatRooms-controller', [])
 
             $scope.messages.push({
               user_id : fromUserId,
-              date : new Date(),
+              created : new Date(),
               text : data.result.text,
               type : data.result.type
             });
@@ -198,33 +198,29 @@ angular.module('translate-chat.chatRooms-controller', [])
       });
 
       $scope.$watch('input.message', function (newValue/*, oldValue*/) {
-        console.log('input.message $watch, newValue "' + newValue + '"', arguments);
-        if (!newValue) {
-          newValue = '';
-        }
-        localStorage['userMessage-' + $scope.toUser.user_id] = newValue;
+        localStorage['userMessage-' + $scope.toUser.user_id] = newValue || '';
       });
 
       $scope.sendMessage = function (/*sendMessageForm*/) {
         var message = {
-          toId : $scope.toUser.user_id,
+          user_id :$scope.user.user_id,
+          created : new Date(),
+          user_name : $scope.user.user_name,
+          user_face : $scope.user.user_face,
+          type : 'text',
+          to_user : $scope.toUser,
           text : $scope.input.message
         };
 
         $scope.input.message = '';
-
-        message.user_id = $scope.user.user_id;
-        message.date = new Date();
-        message.user_name = $scope.user.user_name;
-        message.pic = $scope.user.user_face;
 
         $timeout(function () {
           $scope.messages.push(message);
           viewScroll.scrollBottom(true);
 
           Socket.emit('new_message', {
-            type : 'text', text : message.text,
-            friends : [$scope.toUser]
+            type : message.type, text : message.text,
+            friends : [message.to_user]
           });
         }, 500);
       };
@@ -254,7 +250,6 @@ angular.module('translate-chat.chatRooms-controller', [])
         // do stuff
         event.preventDefault();
 
-        console.log('elastic:resize');
         if (!element) {
           return;
         }
