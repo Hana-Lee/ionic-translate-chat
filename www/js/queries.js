@@ -27,13 +27,14 @@ var translateChat = (function () {
     'user_id VARCHAR(255) NOT NULL, ' +
     'user_name VARCHAR(255) NOT NULL, ' +
     'user_face VARCHAR(255) NOT NULL DEFAULT \'img/sarah.png\' , ' +
+    'device_token VARCHAR(1024) NOT NULL, ' +
     'device_id VARCHAR(512) NOT NULL, ' +
     'device_type VARCHAR(512) NOT NULL, ' +
     'device_version VARCHAR(512) NOT NULL, ' +
     'socket_id VARCHAR(255) NOT NULL, ' +
     'connection_time TIMESTAMP NOT NULL DEFAULT (STRFTIME(\'%s\', \'now\') || \'000\'), ' +
     'created TIMESTAMP NOT NULL DEFAULT (STRFTIME(\'%s\', \'now\') || \'000\'), ' +
-    'PRIMARY KEY(device_id)' +
+    'PRIMARY KEY(user_id, user_name, device_id)' +
     ')';
   QUERIES.CREATE_FRIENDS =
     'CREATE TABLE IF NOT EXISTS Friends(' +
@@ -88,10 +89,10 @@ var translateChat = (function () {
   QUERIES.INSERT_USER =
     'INSERT INTO Users ' +
     '(' +
-    'user_id, user_name, user_face, device_id, device_type, ' +
+    'user_id, user_name, user_face, device_token, device_id, device_type, ' +
     'device_version, socket_id, connection_time, created' +
     ') ' +
-    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
   QUERIES.INSERT_FRIEND = 'INSERT INTO Friends (user_id, friend_id) VALUES (?, ?)';
   QUERIES.INSERT_CHAT_ROOM = 'INSERT INTO ChatRooms (chat_room_id) VALUES (?)';
   QUERIES.INSERT_CHAT_ROOM_USER = 'INSERT INTO ChatRoomUsers (chat_room_id, user_id) VALUES (?, ?)';
@@ -116,30 +117,30 @@ var translateChat = (function () {
   QUERIES.SELECT_USER_BY_USER_ID =
     'SELECT ' +
     'user_id, user_name, user_face, ' +
-    'device_id, device_type, device_version, socket_id, ' +
-    'connection_time, created ' +
+    'device_token, device_id, device_type, device_version, ' +
+    'socket_id, connection_time, created ' +
     'FROM Users WHERE user_id = ?';
   QUERIES.SELECT_USER_BY_USER_NAME =
     'SELECT ' +
     'user_id, user_name, user_face, ' +
-    'device_id, device_type, device_version, socket_id, ' +
-    'connection_time, created ' +
+    'device_token, device_id, device_type, device_version, ' +
+    'socket_id, connection_time, created ' +
     'FROM Users WHERE user_name = ?';
   QUERIES.SELECT_USER_BY_DEVICE_ID =
     'SELECT ' +
     'user_id, user_name, user_face, ' +
-    'device_id, device_type, device_version, socket_id, ' +
-    'connection_time, created ' +
+    'device_token, device_id, device_type, device_version, ' +
+    'socket_id, connection_time, created ' +
     'FROM Users WHERE device_id = ?';
   QUERIES.SELECT_ALL_USERS =
     'SELECT ' +
     'user_id, user_name, user_face, ' +
-    'device_id, device_type, device_version, socket_id, ' +
-    'connection_time, created ' +
+    'device_token, device_id, device_type, device_version, ' +
+    'socket_id, connection_time, created ' +
     'FROM Users ORDER BY user_name DESC';
   QUERIES.SELECT_ALL_FRIENDS_BY_USER_ID =
     'SELECT ' +
-    'u.user_id, u.user_name, u.user_face, ' +
+    'u.user_id, u.user_name, u.user_face, u.device_token, ' +
     'u.device_id, u.device_type, u.device_version, u.socket_id, ' +
     'u.connection_time, f.created ' +
     'FROM Friends AS f ' +

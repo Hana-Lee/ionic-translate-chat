@@ -39,6 +39,7 @@ angular.module('translate-chat.services', ['ionic'])
           localStorage.setItem('translate-chat-user-id', data.result.user_id);
           localStorage.setItem('translate-chat-user-name', data.result.user_name);
           localStorage.setItem('translate-chat-device-id', data.result.device_id);
+          localStorage.setItem('translate-chat-device-token', data.result.device_token);
           localStorage.setItem('translate-chat-user-info', JSON.stringify(data.result));
           this.user = data.result;
           deferred.resolve(data.result);
@@ -120,9 +121,9 @@ angular.module('translate-chat.services', ['ionic'])
       $q.when($sqliteService.executeSql(
         translateChat.QUERIES.INSERT_USER,
         [
-          userData.user_id, userData.user_name, userData.user_face, userData.device_id,
-          userData.device_type, userData.device_version, userData.socket_id,
-          userData.connection_time, userData.created
+          userData.user_id, userData.user_name, userData.user_face, userData.device_token,
+          userData.device_id, userData.device_type, userData.device_version,
+          userData.socket_id, userData.connection_time, userData.created
         ]
       )).then(function () {
         deferred.resolve(userData);
@@ -225,6 +226,14 @@ angular.module('translate-chat.services', ['ionic'])
           return 'WEB_BROWSER';
         }
         return ionic.Platform.platform().toUpperCase();
+      },
+      getToken : function () {
+        var deviceToken = localStorage.getItem('translate-chat-device-token');
+        if (deviceToken) {
+          return deviceToken;
+        }
+
+        return '';
       }
     };
   })
@@ -535,8 +544,11 @@ angular.module('translate-chat.services', ['ionic'])
     // if use promise then https://gist.github.com/jrthib/4ce016449a29811d71b5
     // var socket = io.connect('http://ihanalee.com:3000');
     var deviceId = Device.getId();
-    // var server = 'http://192.168.200.114:3000';
-    var server = 'http://172.30.1.47:3000';
+    // var server = 'http://192.168.200.114:3000'; // 회사
+    // var server = 'http://172.30.1.47:3000'; // 투썸
+    // var server = 'http://10.0.1.5:3000'; // 집
+    var server = 'http://172.30.1.30:3000'; // Coffine cafe
+
     var socket = io.connect(server, {query : 'device_id=' + deviceId});
 
     return socketFactory({

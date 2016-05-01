@@ -22,7 +22,7 @@ angular.module('translate-chat.friends-controller', ['ionic'])
   .controller('FriendsCtrl',
     function ($ionicPlatform, $scope, $rootScope, $ionicTabsDelegate, Friends,
               $ionicHistory,
-              $location, $ionicModal, UserService, Chats, Device, Socket, _, $state) {
+              $ionicModal, UserService, Chats, Device, Socket, _, $state) {
     'use strict';
 
     $scope.friends = [];
@@ -179,11 +179,12 @@ angular.module('translate-chat.friends-controller', ['ionic'])
       var deviceId = Device.getId();
       var deviceType = Device.getType();
       var deviceVersion = Device.getVersion();
+      var deviceToken = Device.getToken();
 
       var params = {
         user_name : $scope.user.user_name, device_id : deviceId,
         device_type : deviceType, device_version : deviceVersion,
-        user_face : 'img/sarah.png'
+        user_face : 'img/sarah.png', device_token : deviceToken
       };
       UserService.createUserOnServer(params)
         .then(function (result) {
@@ -202,7 +203,6 @@ angular.module('translate-chat.friends-controller', ['ionic'])
 
     function joinChatRoom(chatRoomId, friend) {
       Chats.join(chatRoomId, $scope.user, friend).then(function () {
-        // $location.path('/tab/room/' + chatRoomId);
         var viewId = $ionicHistory.viewHistory().currentView.viewId;
         $state.go('tab.chat-room', {chatRoomId : chatRoomId, backViewId : viewId});
       }, function (error) {

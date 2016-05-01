@@ -16,7 +16,7 @@
  todo     : true,
  node     : true
  */
-/*global angular, cordova, StatusBar, ionic */
+/*global angular, cordova, StatusBar, ionic, Ionic */
 
 angular.module('translate-chat', [
     'ionic', 'ngCordova',
@@ -53,20 +53,29 @@ angular.module('translate-chat', [
 
       ionic.Platform.isNativeBrowser = (!ionic.Platform.isAndroid() && !ionic.Platform.isIOS());
 
-      $sqliteService.preloadDataBase(true).then(function (result) {
-        console.log('preload database done', JSON.stringify(result));
-        $rootScope.$emit('DB_ready');
-      }, function (error) {
-        console.error('preload database error', JSON.stringify(error));
-      });
+      function prepareDatabase() {
+        $sqliteService.preloadDataBase(true).then(function (result) {
+          console.log('preload database done', JSON.stringify(result));
+          $rootScope.$emit('DB_ready');
+        }, function (error) {
+          console.error('preload database error', JSON.stringify(error));
+        });
+      }
 
-      var push = new Ionic.Push({
-        "debug": true
-      });
-      push.register(function(token) {
-        console.log("Device token:",token.token);
-        push.saveToken(token);  // persist the token in the Ionic Platform
-      });
+      if (ionic.Platform.isNativeBrowser) {
+        prepareDatabase();
+      } else {
+        var push = new Ionic.Push({
+          "debug" : false
+        });
+        push.register(function (token) {
+          console.log("Device token:", token.token);
+          localStorage.setItem('translate-chat-device-token', token.token);
+          push.saveToken(token);  // persist the token in the Ionic Platform
+
+          prepareDatabase();
+        });
+      }
     });
   })
 
