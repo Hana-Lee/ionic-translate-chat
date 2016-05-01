@@ -32,6 +32,7 @@ angular.module('translate-chat.friends-controller', ['ionic'])
       console.log('history : ', $ionicHistory.viewHistory());
 
       var initializing = false;
+      var dbInitializeComplete = false;
 
       Socket.on('addedFriend', function (data) {
         if (data.error) {
@@ -120,6 +121,9 @@ angular.module('translate-chat.friends-controller', ['ionic'])
         if (initializing) {
           return;
         }
+        if (!dbInitializeComplete) {
+          return;
+        }
         initializing = true;
         var params = {
           device_id : Device.getId()
@@ -154,8 +158,10 @@ angular.module('translate-chat.friends-controller', ['ionic'])
           cordova.plugins.Keyboard.disableScroll(true);
         }
 
-        if (!$scope.user.user_name) {
-          _initializeUserAndFriends();
+        if (!$rootScope.first_run && dbInitializeComplete) {
+          if (!$scope.user.user_name) {
+            _initializeUserAndFriends();
+          }
         }
         console.log('friend view enter', $scope.user);
       });
@@ -169,6 +175,7 @@ angular.module('translate-chat.friends-controller', ['ionic'])
 
       $rootScope.$on('DB_ready', function () {
         console.log('friend db init done');
+        dbInitializeComplete = true;
         if ($rootScope.first_run) {
           console.log('first run');
           $scope.userNameInpuModal.show();

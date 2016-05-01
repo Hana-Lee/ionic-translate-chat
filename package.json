@@ -26,15 +26,11 @@
       "variables": {
         "SENDER_ID": "456389532659"
       },
-      "locator": "phonegap-plugin-push"
-    },
-    {
-      "variables": {
-        "SENDER_ID": "456389532659"
-      },
       "locator": "phonegap-plugin-push",
       "id": "phonegap-plugin-push"
-    }
+    },
+    "cordova-sqlite-ext",
+    "cordova-plugin-x-toast"
   ],
   "cordovaPlatforms": [
     "ios",

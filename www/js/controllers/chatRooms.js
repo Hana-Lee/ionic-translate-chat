@@ -22,8 +22,9 @@
 angular.module('translate-chat.chatRooms-controller', [])
   .controller('ChatRoomsCtrl',
     function ($scope, $rootScope, $state, $stateParams, MessageService, $ionicActionSheet,
-              $ionicPopup, $ionicScrollDelegate, $timeout, $interval, Chats,
-              $ionicTabsDelegate, Socket, UserService, $ionicHistory, _) {
+              $ionicPopup, $ionicScrollDelegate, $timeout, $interval, Chats, $ionicModal,
+              $ionicTabsDelegate, Socket, UserService, $ionicHistory, _, SettingService,
+              $cordovaToast) {
       'use strict';
 
       var viewScroll = $ionicScrollDelegate.$getByHandle('userMessageScroll');
@@ -201,6 +202,41 @@ angular.module('translate-chat.chatRooms-controller', [])
         localStorage['userMessage-' + $scope.toUser.user_id] = newValue || '';
       });
 
+      $scope.settingsList = [{
+        id : 'translate_ko',
+        text : '한국어를 번역',
+        checked : false
+      }];
+
+      $scope.translateSettingChange = function () {
+        var params = {
+          translate_ko : $scope.settingsList[0].checked ? '1' : '0',
+          show_picture : null,
+          user_id : $scope.user.user_id,
+          chat_room_id : chatRoomId
+        };
+        SettingService.updateTranslateSetting(params).then(function () {
+          if (!ionic.Platform.isNativeBrowser) {
+            $cordovaToast.show('변경 완료', 'long', 'bottom');
+          }
+        });
+      };
+
+      $ionicModal.fromTemplateUrl('templates/chat-room-setting.html', {
+        scope : $scope,
+        animation : 'slide-in-up'
+      }).then(function (modal) {
+        $scope.settingModal = modal;
+      });
+
+      $scope.showSetting = function () {
+        $scope.settingModal.show();
+      };
+
+      $scope.hideSetting = function () {
+        $scope.settingModal.hide();
+      };
+
       $scope.sendMessage = function (/*sendMessageForm*/) {
         var message = {
           user_id :$scope.user.user_id,
@@ -215,7 +251,7 @@ angular.module('translate-chat.chatRooms-controller', [])
         $scope.input.message = '';
 
         $timeout(function () {
-          $scope.messages.push(message);
+          // $scope.messages.push(message);
           viewScroll.scrollBottom(true);
 
           Socket.emit('new_message', {
@@ -276,6 +312,28 @@ angular.module('translate-chat.chatRooms-controller', [])
     })
 
   // services
+  .factory('SettingService', function ($q, Socket) {
+    'use strict';
+
+    return {
+      updateTranslateSetting : function (userData) {
+        var deferred = $q.defer();
+
+        Socket.emit('updateChatRoomSettingsTranslateKo', userData);
+        Socket.on('updatedChatRoomSettingsTranslateKo', function (data) {
+          Socket.removeListener('updatedChatRoomSettingsTranslateKo');
+
+          if (data.error) {
+            deferred.reject(data.error);
+          } else {
+            deferred.resolve(data.result);
+          }
+        });
+
+        return deferred.promise;
+      }
+    };
+  })
   .factory('MessageService', function ($http, $q, Socket) {
       'use strict';
       var me = {};

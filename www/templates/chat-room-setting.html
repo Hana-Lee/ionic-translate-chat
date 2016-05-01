@@ -1,0 +1,18 @@
+<ion-modal-view class="edit">
+  <ion-header-bar class="bar bar-header bar-positive">
+    <h1 class="title">설정</h1>
+    <button class="button button-royal" ng-click="hideSetting()">닫기</button>
+  </ion-header-bar>
+  <ion-content>
+    <div class="list">
+      <div class="item item-divider">
+        번역 옵션
+      </div>
+      <ion-toggle ng-repeat="item in settingsList"
+                  ng-model="item.checked"
+                  ng-checked="item.checked" ng-change="translateSettingChange()">
+        {{ item.text }}
+      </ion-toggle>
+    </div>
+  </ion-content>
+</ion-modal-view>

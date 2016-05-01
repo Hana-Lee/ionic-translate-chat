@@ -1,7 +1,9 @@
 <ion-view id="userMessagesView"
           cache-view="false"
           view-title="<i class='icon ion-chatbubble user-messages-top-icon'></i><div class='msg-header-username'>{{toUser.user_name}}</div>">
-
+  <ion-nav-buttons side="right">
+    <button class="button icon ion-android-settings" ng-click="showSetting()"></button>
+  </ion-nav-buttons>
   <div class="loader-center" ng-if="!doneLoading">
     <div class="loader">
       <i class="icon ion-loading-c"></i>
