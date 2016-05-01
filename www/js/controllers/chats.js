@@ -19,17 +19,24 @@
 /*global angular */
 
 angular.module('translate-chat.chats-controller', [])
-  .controller('ChatsCtrl', function ($scope, Chats, UserService, $state, $ionicHistory) {
+  .controller('ChatsCtrl', function ($scope, Chats, UserService, $state, $ionicHistory, $ionicTabsDelegate) {
     'use strict';
 
     $scope.chats = [];
     $scope.user = {};
-    var user = UserService.get();
-    user.then(function (result) {
-      $scope.user = result;
-      Chats.all(result).then(function (result) {
-        $scope.chats = result;
+
+    $scope.$on('$ionicView.enter', function () {
+      var user = UserService.get();
+      user.then(function (result) {
+        $scope.user = result;
+        Chats.all(result).then(function (result) {
+          $scope.chats = result;
+        });
       });
+    });
+
+    $scope.$on('$ionicView.beforeEnter', function () {
+      $ionicTabsDelegate.showBar(true);
     });
 
     $scope.joinChatRoom = function(chat) {

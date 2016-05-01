@@ -42,7 +42,7 @@ angular.module('translate-chat', [
       }
 
       $rootScope.env = {
-        DEVELOPMENT : true
+        DEVELOPMENT : false
       };
 
       if ($rootScope.env.DEVELOPMENT) {

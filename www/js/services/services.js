@@ -362,6 +362,8 @@ angular.module('translate-chat.services', ['ionic'])
             console.log('get friends error : ', error);
             deferred.reject(error);
           });
+        } else {
+          deferred.resolve(chats);
         }
         return promise;
       },
