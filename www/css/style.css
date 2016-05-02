@@ -1,10 +1,10 @@
 #userMessagesView .scroll-content {
   /* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#deefff+0,98bede+100;Blue+3D+%2310 */
-  background: url("../img/bg/heart-pattern5.gif"), rgb(222,239,255); /* Old browsers */
-  background: url("../img/bg/heart-pattern5.gif"), -moz-linear-gradient(top,  rgba(222,239,255,1) 0%, rgba(152,190,222,1) 100%); /* FF3.6-15 */
-  background: url("../img/bg/heart-pattern5.gif"), -webkit-linear-gradient(top,  rgba(222,239,255,1) 0%,rgba(152,190,222,1) 100%); /* Chrome10-25,Safari5.1-6 */
-  background: url("../img/bg/heart-pattern5.gif"), linear-gradient(to bottom,  rgba(222,239,255,1) 0%,rgba(152,190,222,1) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
-  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#deefff', endColorstr='#98bede',GradientType=0 ); /* IE6-9 */
+  background: url("../img/bg/heart-pattern5.gif"), rgb(222, 239, 255); /* Old browsers */
+  background: url("../img/bg/heart-pattern5.gif"), -moz-linear-gradient(top, rgba(222, 239, 255, 1) 0%, rgba(152, 190, 222, 1) 100%); /* FF3.6-15 */
+  background: url("../img/bg/heart-pattern5.gif"), -webkit-linear-gradient(top, rgba(222, 239, 255, 1) 0%, rgba(152, 190, 222, 1) 100%); /* Chrome10-25,Safari5.1-6 */
+  background: url("../img/bg/heart-pattern5.gif"), linear-gradient(to bottom, rgba(222, 239, 255, 1) 0%, rgba(152, 190, 222, 1) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#deefff', endColorstr='#98bede', GradientType=0); /* IE6-9 */
 }
 
 .bar-footer {
@@ -17,13 +17,21 @@
 }
 
 /* fixes an ios bug bear */
-button.ion-android-send {
+button.ion-ios-camera {
   padding-top: 2px;
 }
 
 .footer-btn {
   position: absolute !important;
   bottom: 0;
+  padding: 0 !important;
+}
+
+.footer-btn-wrap {
+  position: relative;
+  height: 100%;
+  width: 30px;
+  top: 7px;
 }
 
 .ion-email {
@@ -34,6 +42,10 @@ button.ion-android-send {
 
 .message {
   font-size: 14px;
+}
+
+.message img {
+  width: 100%;
 }
 
 .message-detail {
@@ -62,6 +74,10 @@ button.ion-android-send {
   max-width: 80%;
 }
 
+.chat-bubble.image {
+  max-width: 50%;
+}
+
 .chat-bubble:before {
   content: "\00a0";
   display: block;
@@ -78,9 +94,9 @@ button.ion-android-send {
 }
 
 /*.chat-bubble.left:before {*/
-  /*background-color: whitesmoke;*/
-  /*left: 10px;*/
-  /*-webkit-transform: rotate(70deg) skew(5deg);*/
+/*background-color: whitesmoke;*/
+/*left: 10px;*/
+/*-webkit-transform: rotate(70deg) skew(5deg);*/
 /*}*/
 
 .chat-bubble.right {
@@ -91,10 +107,10 @@ button.ion-android-send {
 }
 
 /*.chat-bubble.right:before {*/
-  /*background-color: #EFFDDE;*/
-  /*right: 10px;*/
-  /*box-shadow: 1px -2px 0px #8abaa8;*/
-  /*-webkit-transform: rotate(118deg) skew(-5deg);*/
+/*background-color: #EFFDDE;*/
+/*right: 10px;*/
+/*box-shadow: 1px -2px 0px #8abaa8;*/
+/*-webkit-transform: rotate(118deg) skew(-5deg);*/
 /*}*/
 
 .chat-bubble.right a.autolinker {

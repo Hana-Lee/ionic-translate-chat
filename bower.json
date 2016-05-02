@@ -13,7 +13,8 @@
     "angular-elastic": "^2.5.1",
     "angular-socket-io": "^0.7.0",
     "underscore": "^1.8.3",
-    "angular-underscore-module": "^1.0.3"
+    "angular-underscore-module": "^1.0.3",
+    "angular-md5": "^0.1.10"
   },
   "resolutions": {
     "moment": ">=2.8.0 <2.11.0"

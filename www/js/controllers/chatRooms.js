@@ -17,14 +17,14 @@
  unparam  : true,
  node     : true
  */
-/*global angular, ionic, cordova, Autolinker */
+/*global angular, ionic, cordova, Autolinker, Camera, FileTransfer, FileUploadOptions */
 
 angular.module('translate-chat.chatRooms-controller', [])
   .controller('ChatRoomsCtrl',
     function ($scope, $rootScope, $state, $stateParams, MessageService, $ionicActionSheet,
               $ionicPopup, $ionicScrollDelegate, $timeout, $interval, Chats, $ionicModal,
               $ionicTabsDelegate, Socket, UserService, $ionicHistory, _, SettingService,
-              $cordovaToast) {
+              $cordovaToast, ImageFileUploader, $cordovaCamera, md5) {
       'use strict';
 
       var viewScroll = $ionicScrollDelegate.$getByHandle('userMessageScroll');
@@ -36,6 +36,8 @@ angular.module('translate-chat.chatRooms-controller', [])
       var chatRoomId = $stateParams.chatRoomId;
       var backViewId = $stateParams.backViewId;
       var user = UserService.get();
+      var imageUploadUrl = 'http://192.168.200.114:3000/api/image';
+
       $scope.user = {};
       $scope.toUser = {};
       $scope.settingsList = [{
@@ -82,6 +84,17 @@ angular.module('translate-chat.chatRooms-controller', [])
       $scope.input = {
         message : localStorage['userMessage-' + $scope.toUser.user_id] || ''
       };
+
+      var _seed = null;
+
+      function createUID(value) {
+        if (!_seed) {
+          _seed = (new Date()).valueOf();
+        }
+        _seed++;
+
+        return md5.createHash(_seed + value);
+      }
 
       function keyboardPluginAvailable() {
         return window.cordova && window.cordova.plugins && window.cordova.plugins.Keyboard;
@@ -234,6 +247,92 @@ angular.module('translate-chat.chatRooms-controller', [])
       $scope.$watch('input.message', function (newValue/*, oldValue*/) {
         localStorage['userMessage-' + $scope.toUser.user_id] = newValue || '';
       });
+
+      $scope.retrievePicture = function (event) {
+        event.preventDefault();
+
+        if (ionic.Platform.isNativeBrowser) {
+          var fileButton = document.querySelector('#image-file-picker');
+          angular.element(fileButton).bind('change', function () {
+            var imageFile = $scope.imageFile;
+            ImageFileUploader.uploadImageFileToUrl(imageFile, imageUploadUrl).then(function () {
+              var message = {
+                user_id : $scope.user.user_id,
+                created : new Date(),
+                user_name : $scope.user.user_name,
+                user_face : $scope.user.user_face,
+                type : 'image',
+                to_user : $scope.toUser,
+                text : imageUploadUrl + '/' + imageFile.fileName
+              };
+
+              $scope.input.message = '';
+
+              $timeout(function () {
+                Socket.emit('new_message', {
+                  type : message.type, text : message.text,
+                  friends : [message.to_user]
+                });
+              }, 1);
+            }, function (error) {
+              console.error('upload image file to server error : ', error);
+            });
+          });
+          fileButton.click();
+        } else {
+          var options = {
+            destinationType : Camera.DestinationType.NATIVE_URI,
+            sourceType : Camera.PictureSourceType.PHOTOLIBRARY,
+            encodingType : Camera.EncodingType.JPEG,
+            mediaType : Camera.MediaType.PICTURE,
+            saveToPhotoAlbum: false,
+            quality : 80,
+            correctOrientation: true
+          };
+
+          if (isAndroid) {
+            options.destinationType = Camera.DestinationType.FILE_URI;
+          }
+
+          $cordovaCamera.getPicture(options).then(function(imageData) {
+            $scope.imgURI = "data:image/jpeg;base64," + imageData;
+
+            var uploadOptions = new FileUploadOptions();
+            uploadOptions.fileKey = "image";
+            uploadOptions.fileName = createUID(imageData.substr(imageData.lastIndexOf('/') + 1)) + '.jpg';
+            uploadOptions.mimeType = "image/jpeg";
+            uploadOptions.chunkedMode = true;
+
+            var ft = new FileTransfer();
+            ft.upload(imageData, encodeURI(imageUploadUrl), function () {
+              console.log('upload success : ', arguments);
+              var message = {
+                user_id : $scope.user.user_id,
+                created : new Date(),
+                user_name : $scope.user.user_name,
+                user_face : $scope.user.user_face,
+                type : 'image',
+                to_user : $scope.toUser,
+                text : imageUploadUrl + '/' + uploadOptions.fileName
+              };
+
+              $scope.input.message = '';
+
+              $timeout(function () {
+                Socket.emit('new_message', {
+                  type : message.type, text : message.text,
+                  friends : [message.to_user]
+                });
+              }, 1);
+            }, function(error) {
+              console.error('upload error : ', error);
+            }, uploadOptions);
+          }, function(error) {
+            console.error('get picture error : ', error);
+            // An error occured. Show a message to the user
+          });
+        }
+      };
 
       $scope.translateSettingChange = function () {
         var params = {
@@ -403,6 +502,31 @@ angular.module('translate-chat.chatRooms-controller', [])
     return me;
   })
 
+  .factory('ImageFileUploader', function ($q, $http) {
+    'use strict';
+
+    return {
+      uploadImageFileToUrl : function (imageFile, uploadUrl) {
+        var deferred = $q.defer();
+        var fd = new FormData();
+        fd.append('image', imageFile);
+
+        $http.post(uploadUrl, fd, {
+          transformRequest : angular.identity,
+          headers : {'Content-Type' : undefined}
+        }).success(function (res) {
+          console.log('success', res);
+          deferred.resolve(res);
+        }).error(function (error) {
+          console.error('image file upload error : ', error);
+          deferred.reject(error);
+        });
+
+        return deferred.promise;
+      }
+    };
+  })
+
   .filter('nl2br', function () {
     'use strict';
     return function (data) {
@@ -453,6 +577,24 @@ angular.module('translate-chat.chatRooms-controller', [])
             angular.element(autolinks[i]).bind('click', onLinkClick);
           }
         }, 0);
+      }
+    };
+  })
+  .directive('imageFileModel', function ($parse) {
+    'use strict';
+
+    return {
+      restrict : 'A',
+      link : function (scope, element, attrs) {
+        var model = $parse(attrs.imageFileModel);
+        var modelSetter = model.assign;
+
+        element.bind('change', function () {
+          console.log('file button change 0 ');
+          scope.$apply(function () {
+            modelSetter(scope, element[0].files[0]);
+          });
+        });
       }
     };
   });

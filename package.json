@@ -30,7 +30,9 @@
       "id": "phonegap-plugin-push"
     },
     "cordova-sqlite-ext",
-    "cordova-plugin-x-toast"
+    "cordova-plugin-x-toast",
+    "cordova-plugin-camera",
+    "cordova-plugin-file-transfer"
   ],
   "cordovaPlatforms": [
     "ios",

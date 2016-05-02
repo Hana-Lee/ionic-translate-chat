@@ -23,7 +23,7 @@ angular.module('translate-chat', [
     'translate-chat.friends-controller', 'translate-chat.chats-controller', 'translate-chat.chatRooms-controller',
     'translate-chat.account-controller',
     'translate-chat.services',
-    'monospaced.elastic', 'angularMoment', 'btford.socket-io', 'underscore'
+    'monospaced.elastic', 'angularMoment', 'btford.socket-io', 'underscore', 'angular-md5'
   ])
 
   .run(function ($ionicPlatform, $rootScope, $sqliteService, $state, Socket, Chats, UserService, $ionicHistory) {

@@ -15,7 +15,7 @@
 
     <div ng-repeat="message in messages" class="message-wrapper" on-hold="onMessageHold($event, $index, message)">
       <div ng-if="user.user_id !== message.user_id">
-        <div class="chat-bubble left">
+        <div class="chat-bubble left {{message.type}}">
           <div ng-if="message.type === 'image'" class="message">
             <img ng-src="{{message.text}}">
           </div>
@@ -28,7 +28,7 @@
       </div>
 
       <div ng-if="user.user_id === message.user_id">
-        <div class="chat-bubble right">
+        <div class="chat-bubble right {{message.type}}">
           <div ng-if="message.type === 'image'" class="message">
             <img ng-src="{{message.text}}">
           </div>
@@ -47,6 +47,10 @@
 
   <form name="sendMessageForm" ng-submit="sendMessage(sendMessageForm)" novalidate>
     <ion-footer-bar class="bar-stable item-input-inset message-footer" keyboard-attach>
+      <div class="footer-btn-wrap">
+        <button class="button button-icon icon ion-ios-camera footer-btn" ng-click="retrievePicture($event)"></button>
+        <input id="image-file-picker" name="image" type="file" class="hide" accept="image/*" image-file-model="imageFile"/>
+      </div>
       <label class="item-input-wrapper">
         <textarea ng-model="input.message"
                   placeholder="메시지" required
