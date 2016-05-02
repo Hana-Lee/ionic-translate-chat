@@ -1,0 +1,10 @@
+<ion-modal-view class="show-image-modal transparent">
+  <ion-content class="padding" scroll="false" ng-click="hidePicture()">
+
+    <ion-scroll zooming="true" direction="xy" delegate-handle="zoom-pane" class="zoom-pane" min-zoom="1"
+                scrollbar-x="false" scrollbar-y="false" overflow-scroll="false">
+      <img ng-src="{{showPictureSrc}}" class="fullscreen-image">
+    </ion-scroll>
+
+  </ion-content>
+</ion-modal-view>

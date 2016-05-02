@@ -36,7 +36,7 @@ angular.module('translate-chat.chatRooms-controller', [])
       var chatRoomId = $stateParams.chatRoomId;
       var backViewId = $stateParams.backViewId;
       var user = UserService.get();
-      var imageUploadUrl = 'http://192.168.200.114:3000/api/image';
+      $scope.imageUploadUrl = 'http://192.168.200.114:3000/api/image';
 
       $scope.user = {};
       $scope.toUser = {};
@@ -248,6 +248,26 @@ angular.module('translate-chat.chatRooms-controller', [])
         localStorage['userMessage-' + $scope.toUser.user_id] = newValue || '';
       });
 
+      $ionicModal.fromTemplateUrl('templates/show-image-modal.html', {
+        scope: $scope,
+        animation: 'slide-in-up'
+      }).then(function(modal) {
+        console.log('show image modal init done');
+        $scope.showPictureModal = modal;
+      });
+
+      $scope.showPictureSrc = null;
+      $scope.showPicture = function (message) {
+        // $scope.showPictureSrc = $scope.imageUploadUrl + '/' + message.text;
+        $scope.showPictureSrc = message.text;
+        $scope.showPictureModal.show();
+      };
+
+      $scope.hidePicture = function () {
+        $scope.showPictureModal.hide();
+        $scope.showPictureSrc = null;
+      };
+
       $scope.retrievePicture = function (event) {
         event.preventDefault();
 
@@ -255,7 +275,7 @@ angular.module('translate-chat.chatRooms-controller', [])
           var fileButton = document.querySelector('#image-file-picker');
           angular.element(fileButton).bind('change', function () {
             var imageFile = $scope.imageFile;
-            ImageFileUploader.uploadImageFileToUrl(imageFile, imageUploadUrl).then(function () {
+            ImageFileUploader.uploadImageFileToUrl(imageFile, $scope.imageUploadUrl).then(function () {
               var message = {
                 user_id : $scope.user.user_id,
                 created : new Date(),
@@ -263,7 +283,7 @@ angular.module('translate-chat.chatRooms-controller', [])
                 user_face : $scope.user.user_face,
                 type : 'image',
                 to_user : $scope.toUser,
-                text : imageUploadUrl + '/' + imageFile.fileName
+                text : imageFile.fileName
               };
 
               $scope.input.message = '';
@@ -304,7 +324,7 @@ angular.module('translate-chat.chatRooms-controller', [])
             uploadOptions.chunkedMode = true;
 
             var ft = new FileTransfer();
-            ft.upload(imageData, encodeURI(imageUploadUrl), function () {
+            ft.upload(imageData, encodeURI($scope.imageUploadUrl), function () {
               console.log('upload success : ', arguments);
               var message = {
                 user_id : $scope.user.user_id,
@@ -313,7 +333,7 @@ angular.module('translate-chat.chatRooms-controller', [])
                 user_face : $scope.user.user_face,
                 type : 'image',
                 to_user : $scope.toUser,
-                text : imageUploadUrl + '/' + uploadOptions.fileName
+                text : uploadOptions.fileName
               };
 
               $scope.input.message = '';
