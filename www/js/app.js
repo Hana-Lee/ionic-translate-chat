@@ -26,7 +26,7 @@ angular.module('translate-chat', [
     'monospaced.elastic', 'angularMoment', 'btford.socket-io', 'underscore'
   ])
 
-  .run(function ($ionicPlatform, $rootScope, $sqliteService) {
+  .run(function ($ionicPlatform, $rootScope, $sqliteService, $state, Socket, Chats, UserService, $ionicHistory) {
     'use strict';
 
     $ionicPlatform.ready(function () {
@@ -42,7 +42,7 @@ angular.module('translate-chat', [
       }
 
       $rootScope.env = {
-        DEVELOPMENT : true
+        DEVELOPMENT : false
       };
 
       if ($rootScope.env.DEVELOPMENT) {
@@ -66,7 +66,28 @@ angular.module('translate-chat', [
         prepareDatabase();
       } else {
         var push = new Ionic.Push({
-          "debug" : false
+          debug : false,
+          onNotification : function (data) {
+            console.log('on notification', data);
+            var payload = data.payload;
+            var chatRoomId = payload.chat_room_id;
+            if ($state.current.name !== 'tab.chat-room') {
+              UserService.get().then(function (user) {
+                Chats.getToUser({user_id : user.user_id, chat_room_id : chatRoomId}).then(function (friend) {
+                  Chats.join(chatRoomId, user, friend).then(function () {
+                    var viewId = $ionicHistory.viewHistory().currentView.viewId;
+                    $state.go('tab.chat-room', {chatRoomId : chatRoomId, backViewId : viewId});
+                  }, function (error) {
+                    console.log('joining chat room error : ', JSON.stringify(error));
+                  });
+                }, function (error) {
+                  console.error('get to user(friend) error : ', error);
+                });
+              }, function (error) {
+                console.error('get user by user service error : ', error);
+              });
+            }
+          }
         });
         push.register(function (token) {
           console.log("Device token:", token.token);
@@ -76,6 +97,26 @@ angular.module('translate-chat', [
           prepareDatabase();
         });
       }
+
+      document.addEventListener('resume', function () {
+        console.log('app resume state');
+        if ($state.current.name === 'tab.chat-room') {
+          var params = {
+            user_id : $rootScope.user_id,
+            online : 1
+          };
+          Socket.emit('updateUserOnlineState', params);
+        }
+      });
+
+      document.addEventListener('pause', function () {
+        console.log('app pause state');
+        var params = {
+          user_id : $rootScope.user_id,
+          online : 0
+        };
+        Socket.emit('updateUserOnlineState', params);
+      });
     });
   })
 

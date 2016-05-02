@@ -19,17 +19,10 @@
  */
 /*global angular */
 angular.module('translate-chat.account-controller', [])
-  .controller('AccountCtrl', function ($rootScope, $scope, UserService) {
+  .controller('AccountCtrl', function ($rootScope, $scope, UserService, $ionicTabsDelegate) {
     'use strict';
 
     $scope.user = {};
-
-    $rootScope.$on('DB_ready', function () {
-      console.log('account db init done');
-      UserService.get().then(function (result) {
-        $scope.user = result;
-      });
-    });
 
     $scope.$on('$ionicView.enter', function () {
       console.log('account view enter');
@@ -38,6 +31,10 @@ angular.module('translate-chat.account-controller', [])
           $scope.user = result;
         });
       }
+    });
+
+    $scope.$on('$ionicView.beforeEnter', function () {
+      $ionicTabsDelegate.showBar(true);
     });
 
     console.log('user information : ', $scope.user);

@@ -114,6 +114,7 @@ angular.module('translate-chat.friends-controller', ['ionic'])
         Friends.getAll(userData).then(function (result) {
           $scope.friends = result;
           initializing = false;
+          $rootScope.first_run = false;
         });
       }
 
@@ -132,6 +133,7 @@ angular.module('translate-chat.friends-controller', ['ionic'])
           .then(function (result) {
             console.log('retrieveAlreadyRegisteredUserByDeviceId result : ', JSON.stringify(result));
             $scope.user = result;
+            $rootScope.user_id = $scope.user.user_id;
             _initializeFriends(result);
           }, function (error) {
             console.error('retrieve already registered user by device id on local error : ', JSON.stringify(error));
@@ -141,6 +143,7 @@ angular.module('translate-chat.friends-controller', ['ionic'])
                 if (result && Object.keys(result).length > 0) {
                   UserService.createUserOnLocal(result).then(function (result) {
                     $scope.user = result;
+                    $rootScope.user_id = $scope.user.user_id;
                     _initializeFriends(result);
                   });
                 } else {
@@ -193,7 +196,8 @@ angular.module('translate-chat.friends-controller', ['ionic'])
         var params = {
           user_name : $scope.user.user_name, device_id : deviceId,
           device_type : deviceType, device_version : deviceVersion,
-          user_face : 'img/sarah.png', device_token : deviceToken
+          user_face : 'img/sarah.png', device_token : deviceToken,
+          online : 1
         };
         UserService.createUserOnServer(params)
           .then(function (result) {
@@ -201,6 +205,7 @@ angular.module('translate-chat.friends-controller', ['ionic'])
               .then(function (result) {
                 console.log('create user success', JSON.stringify(result));
                 $scope.user = result;
+                $rootScope.user_id = $scope.user.user_id;
                 $scope.userNameInpuModal.hide();
               }, function (error) {
                 console.error('create user on local error : ', JSON.stringify(error));

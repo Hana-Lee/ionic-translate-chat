@@ -123,7 +123,7 @@ angular.module('translate-chat.services', ['ionic'])
         [
           userData.user_id, userData.user_name, userData.user_face, userData.device_token,
           userData.device_id, userData.device_type, userData.device_version,
-          userData.socket_id, userData.connection_time, userData.created
+          userData.socket_id, userData.online, userData.connection_time, userData.created
         ]
       )).then(function () {
         deferred.resolve(userData);
@@ -546,10 +546,10 @@ angular.module('translate-chat.services', ['ionic'])
     // if use promise then https://gist.github.com/jrthib/4ce016449a29811d71b5
     // var socket = io.connect('http://ihanalee.com:3000');
     var deviceId = Device.getId();
-    // var server = 'http://192.168.200.114:3000'; // 회사
+    var server = 'http://192.168.200.114:3000'; // 회사
     // var server = 'http://172.30.1.47:3000'; // 투썸
     // var server = 'http://10.0.1.5:3000'; // 집
-    var server = 'http://192.168.1.48:3000'; // 할리스 커피
+    // var server = 'http://192.168.1.48:3000'; // 할리스 커피
     // var server = 'http://172.30.1.30:3000'; // Coffine cafe
 
     var socket = io.connect(server, {query : 'device_id=' + deviceId});

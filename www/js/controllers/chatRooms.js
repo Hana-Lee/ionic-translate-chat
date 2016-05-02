@@ -38,6 +38,16 @@ angular.module('translate-chat.chatRooms-controller', [])
       var user = UserService.get();
       $scope.user = {};
       $scope.toUser = {};
+      $scope.settingsList = [{
+        id : 'translate_ko',
+        text : '한국어를 번역',
+        checked : false
+      }, {
+        id : 'show_picture',
+        text : '사진 보기',
+        checked : false
+      }];
+
       user.then(function (result) {
         $scope.user = result;
         console.log('user ', $scope.user);
@@ -45,6 +55,23 @@ angular.module('translate-chat.chatRooms-controller', [])
           function (result) {
             $scope.toUser = result;
             console.log('to user', result);
+            var params = {
+              user_id : $scope.user.user_id,
+              online : 1
+            };
+            Socket.emit('updateUserOnlineState', params);
+
+            SettingService.getSettingsList({
+              user_id : $scope.user.user_id,
+              chat_room_id : chatRoomId
+            }).then(function (result) {
+              if (result) {
+                $scope.settingsList[0].checked = result.translate_ko ? true : false;
+                $scope.settingsList[1].checked = result.show_picture ? true : false;
+              }
+            }, function (error) {
+              console.error('get settings list error : ', error);
+            });
           }, function (error) {
             console.error('get to user error : ', JSON.stringify(error));
           });
@@ -188,6 +215,12 @@ angular.module('translate-chat.chatRooms-controller', [])
         if (keyboardPluginAvailable()) {
           cordova.plugins.Keyboard.disableScroll(false);
         }
+
+        var params = {
+          user_id : $scope.user.user_id,
+          online : 0
+        };
+        Socket.emit('updateUserOnlineState', params);
       });
 
       $scope.$on('$ionicView.beforeLeave', function () {
@@ -201,12 +234,6 @@ angular.module('translate-chat.chatRooms-controller', [])
       $scope.$watch('input.message', function (newValue/*, oldValue*/) {
         localStorage['userMessage-' + $scope.toUser.user_id] = newValue || '';
       });
-
-      $scope.settingsList = [{
-        id : 'translate_ko',
-        text : '한국어를 번역',
-        checked : false
-      }];
 
       $scope.translateSettingChange = function () {
         var params = {
@@ -239,7 +266,7 @@ angular.module('translate-chat.chatRooms-controller', [])
 
       $scope.sendMessage = function (/*sendMessageForm*/) {
         var message = {
-          user_id :$scope.user.user_id,
+          user_id : $scope.user.user_id,
           created : new Date(),
           user_name : $scope.user.user_name,
           user_face : $scope.user.user_face,
@@ -331,21 +358,13 @@ angular.module('translate-chat.chatRooms-controller', [])
         });
 
         return deferred.promise;
-      }
-    };
-  })
-  .factory('MessageService', function ($http, $q, Socket) {
-      'use strict';
-      var me = {};
-
-      me.getUserMessages = function (chatRoomId) {
+      },
+      getSettingsList : function (userData) {
         var deferred = $q.defer();
 
-        Socket.emit('retrieveAllChatMessagesByChatRoomId', {
-          chat_room_id : chatRoomId
-        });
-        Socket.on('retrievedAllChatMessagesByChatRoomId', function (data) {
-          Socket.removeListener('retrievedAllChatMessagesByChatRoomId');
+        Socket.emit('retrieveChatRoomSettingsList', userData);
+        Socket.on('retrievedChatRoomSettingsList', function (data) {
+          Socket.removeListener('retrievedChatRoomSettingsList');
 
           if (data.error) {
             deferred.reject(data.error);
@@ -355,59 +374,85 @@ angular.module('translate-chat.chatRooms-controller', [])
         });
 
         return deferred.promise;
-      };
+      }
+    };
+  })
+  .factory('MessageService', function ($http, $q, Socket) {
+    'use strict';
+    var me = {};
 
-      return me;
-    })
+    me.getUserMessages = function (chatRoomId) {
+      var deferred = $q.defer();
+
+      Socket.emit('retrieveAllChatMessagesByChatRoomId', {
+        chat_room_id : chatRoomId
+      });
+      Socket.on('retrievedAllChatMessagesByChatRoomId', function (data) {
+        Socket.removeListener('retrievedAllChatMessagesByChatRoomId');
+
+        if (data.error) {
+          deferred.reject(data.error);
+        } else {
+          deferred.resolve(data.result);
+        }
+      });
+
+      return deferred.promise;
+    };
+
+    return me;
+  })
 
   .filter('nl2br', function () {
-      'use strict';
-      return function (data) {
-        if (!data) {
-          return data;
-        }
-        return data.replace(/\n\r?/g, '<br />');
-      };
-    })
+    'use strict';
+    return function (data) {
+      if (!data) {
+        return data;
+      }
+      return data.replace(/\n\r?/g, '<br />');
+    };
+  })
 
   .directive('autolinker', function ($timeout) {
-      'use strict';
-      return {
-        restrict : 'A',
-        link : function (scope, element, attrs) {
-          $timeout(function () {
-            var eleHtml = element.html();
+    'use strict';
+    return {
+      restrict : 'A',
+      link : function (scope, element, attrs) {
+        $timeout(function () {
+          var eleHtml = element.html();
 
-            if (eleHtml === '') {
-              return false;
+          if (eleHtml === '') {
+            return false;
+          }
+
+          var text = Autolinker.link(eleHtml, {
+            className : 'autolinker',
+            newWindow : false
+          });
+
+          element.html(text);
+
+          var autolinks = element[0].getElementsByClassName('autolinker');
+          var autolinksLength = autolinks.length;
+          var i;
+
+          function onLinkClick(e) {
+            var href = e.target.href;
+            console.log('autolinkClick, href: ' + href);
+
+            if (href) {
+              //window.open(href, '_system');
+              window.open(href, '_blank');
             }
 
-            var text = Autolinker.link(eleHtml, {
-              className : 'autolinker',
-              newWindow : false
-            });
+            e.preventDefault();
+            return false;
+          }
 
-            element.html(text);
-
-            var autolinks = element[0].getElementsByClassName('autolinker');
-            var autolinksLength = autolinks.length;
-            var i;
-            function onLinkClick(e) {
-              var href = e.target.href;
-              console.log('autolinkClick, href: ' + href);
-
-              if (href) {
-                //window.open(href, '_system');
-                window.open(href, '_blank');
-              }
-
-              e.preventDefault();
-              return false;
-            }
-            for (i = 0; i < autolinksLength; i++) {
-              angular.element(autolinks[i]).bind('click', onLinkClick);
-            }
-          }, 0);
-        }
-      };
-    });
+          for (i = 0; i < autolinksLength; i++) {
+            angular.element(autolinks[i]).bind('click', onLinkClick);
+          }
+        }, 0);
+      }
+    };
+  });
