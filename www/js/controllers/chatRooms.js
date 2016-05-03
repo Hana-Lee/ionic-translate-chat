@@ -2,27 +2,12 @@
  * @author Hana Lee
  * @since 2016-04-23 20:50
  */
-/*jslint
- browser  : true,
- continue : true,
- devel    : true,
- indent   : 2,
- maxerr   : 50,
- nomen    : true,
- plusplus : true,
- regexp   : true,
- vars     : true,
- white    : true,
- todo     : true,
- unparam  : true,
- node     : true
- */
-/*global angular, ionic, cordova, Autolinker, Camera, FileTransfer, FileUploadOptions */
 
+/*globals Camera, FileUploadOptions, FileTransfer, Autolinker */
 angular.module('translate-chat.chatRooms-controller', [])
   .controller('ChatRoomsCtrl',
     function ($scope, $rootScope, $state, $stateParams, MessageService, $ionicActionSheet,
-              $ionicPopup, $ionicScrollDelegate, $timeout, $interval, Chats, $ionicModal,
+              $ionicScrollDelegate, $timeout, Chats, $ionicModal,
               $ionicTabsDelegate, Socket, UserService, $ionicHistory, _, SettingService,
               $cordovaToast, ImageFileUploader, $cordovaCamera, md5) {
       'use strict';
@@ -315,12 +300,12 @@ angular.module('translate-chat.chatRooms-controller', [])
           }
 
           $cordovaCamera.getPicture(options).then(function(imageData) {
-            $scope.imgURI = "data:image/jpeg;base64," + imageData;
+            $scope.imgURI = 'data:image/jpeg;base64,' + imageData;
 
             var uploadOptions = new FileUploadOptions();
-            uploadOptions.fileKey = "image";
+            uploadOptions.fileKey = 'image';
             uploadOptions.fileName = createUID(imageData.substr(imageData.lastIndexOf('/') + 1)) + '.jpg';
-            uploadOptions.mimeType = "image/jpeg";
+            uploadOptions.mimeType = 'image/jpeg';
             uploadOptions.chunkedMode = true;
 
             var ft = new FileTransfer();
@@ -561,7 +546,7 @@ angular.module('translate-chat.chatRooms-controller', [])
     'use strict';
     return {
       restrict : 'A',
-      link : function (scope, element, attrs) {
+      link : function (scope, element) {
         $timeout(function () {
           var eleHtml = element.html();
 

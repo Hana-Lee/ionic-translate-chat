@@ -2,22 +2,7 @@
  * @author Hana Lee
  * @since 2016-04-23 20:36
  */
-/*jslint
- browser  : true,
- continue : true,
- devel    : true,
- indent   : 2,
- maxerr   : 50,
- nomen    : true,
- plusplus : true,
- regexp   : true,
- vars     : true,
- white    : true,
- todo     : true,
- node     : true,
- unparam  : true
- */
-/*global angular, ionic, cordova */
+
 angular.module('translate-chat.friends-controller', ['ionic'])
   .controller('FriendsCtrl',
     function ($ionicPlatform, $scope, $rootScope, $ionicTabsDelegate, Friends,
@@ -42,10 +27,10 @@ angular.module('translate-chat.friends-controller', ['ionic'])
             Friends.addToLocal($scope.user, data.result).then(function () {
               $scope.friends.push(data.result);
             }, function (error) {
-              console.error('insert friend to local error : ', JSON.stringify(error));
+              console.error('insert friend to local error : ', error);
             });
           }, function (error) {
-            console.error('insert friend to local user table error : ', JSON.stringify(error));
+            console.error('insert friend to local user table error : ', error);
           });
         }
       });
@@ -99,7 +84,7 @@ angular.module('translate-chat.friends-controller', ['ionic'])
               $scope.userListModal.hide();
             });
           }, function (error) {
-            console.error('insert friend error : ', JSON.stringify(error));
+            console.error('insert friend error : ', error);
           });
         }, function (error) {
           console.error('insert friend to local user table error : ', error);
@@ -131,15 +116,14 @@ angular.module('translate-chat.friends-controller', ['ionic'])
         };
         UserService.retrieveAlreadyRegisteredUserByDeviceIdOnLocal(params)
           .then(function (result) {
-            console.log('retrieveAlreadyRegisteredUserByDeviceId result : ', JSON.stringify(result));
+            console.log('retrieveAlreadyRegisteredUserByDeviceId result : ', result);
             $scope.user = result;
             $rootScope.user_id = $scope.user.user_id;
             _initializeFriends(result);
           }, function (error) {
-            console.error('retrieve already registered user by device id on local error : ', JSON.stringify(error));
+            console.error('retrieve already registered user by device id on local error : ', error);
             UserService.retrieveAlreadyRegisteredUserByDeviceIdOnServer(params)
               .then(function (result) {
-                console.log('retrieveAlreadyRegisteredUserByDeviceIdOnServer result - friend : ', JSON.stringify(result));
                 if (result && Object.keys(result).length > 0) {
                   UserService.createUserOnLocal(result).then(function (result) {
                     $scope.user = result;
@@ -147,10 +131,10 @@ angular.module('translate-chat.friends-controller', ['ionic'])
                     _initializeFriends(result);
                   });
                 } else {
-                  console.error('user information is not exists on server : ', JSON.stringify(result));
+                  console.error('user information is not exists on server : ', result);
                 }
               }, function (error) {
-                console.error('retrieve already registered user by device id on server error : ', JSON.stringify(error));
+                console.error('retrieve already registered user by device id on server error : ', error);
               });
           });
       }
@@ -203,15 +187,15 @@ angular.module('translate-chat.friends-controller', ['ionic'])
           .then(function (result) {
             UserService.createUserOnLocal(result)
               .then(function (result) {
-                console.log('create user success', JSON.stringify(result));
+                console.log('create user success', result);
                 $scope.user = result;
                 $rootScope.user_id = $scope.user.user_id;
                 $scope.userNameInpuModal.hide();
               }, function (error) {
-                console.error('create user on local error : ', JSON.stringify(error));
+                console.error('create user on local error : ', error);
               });
           }, function (error) {
-            console.error('create user on server error : ', JSON.stringify(error));
+            console.error('create user on server error : ', error);
           });
       };
 
@@ -220,7 +204,7 @@ angular.module('translate-chat.friends-controller', ['ionic'])
           var viewId = $ionicHistory.viewHistory().currentView.viewId;
           $state.go('tab.chat-room', {chatRoomId : chatRoomId, backViewId : viewId});
         }, function (error) {
-          console.log('joining chat room error : ', JSON.stringify(error));
+          console.log('joining chat room error : ', error);
         });
       }
 
@@ -229,12 +213,12 @@ angular.module('translate-chat.friends-controller', ['ionic'])
           console.log('get chat room id by user and friend result : ', result);
           joinChatRoom(result, friend);
         }, function (error) {
-          console.error('get chat room id by user and friend error : ', JSON.stringify(error));
+          console.error('get chat room id by user and friend error : ', error);
 
           Chats.create().then(function (createdChatRoomId) {
             joinChatRoom(createdChatRoomId, friend);
           }, function (error) {
-            console.error('create chat room error : ', JSON.stringify(error));
+            console.error('create chat room error : ', error);
           });
         });
       };

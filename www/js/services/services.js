@@ -2,21 +2,7 @@
  * @author Hana Lee
  * @since 2016-04-15 14:13
  */
-/*jslint
- browser  : true,
- continue : true,
- devel    : true,
- indent   : 2,
- maxerr   : 50,
- nomen    : true,
- plusplus : true,
- regexp   : true,
- vars     : true,
- white    : true,
- todo     : true,
- node     : true
- */
-/*global angular, ionic, io, translateChat */
+
 angular.module('translate-chat.services', ['ionic'])
 
   .service('UserService', function ($q, $sqliteService, Device, Socket) {
@@ -286,7 +272,9 @@ angular.module('translate-chat.services', ['ionic'])
       createOnLocal : function (chatRoomId) {
         var deferred = $q.defer();
         var promise = deferred.promise;
-        $q.when($sqliteService.executeSql(translateChat.QUERIES.INSERT_CHAT_ROOM, [chatRoomId])).then(function (result) {
+        $q.when(
+          $sqliteService.executeSql(translateChat.QUERIES.INSERT_CHAT_ROOM, [chatRoomId])
+        ).then(function (result) {
           deferred.resolve(result);
         }, function (error) {
           deferred.reject(error);
@@ -342,7 +330,7 @@ angular.module('translate-chat.services', ['ionic'])
               if (data.error) {
                 deferred.reject(data.error);
               } else if (data.result) {
-                data.result.forEach(function (r) {
+                data.result.forEach(function (/** @prop {String} r.friend_id */r) {
                   var friend = _.find(result, function (f) {
                     return r.friend_id === f.user_id;
                   });
@@ -421,8 +409,11 @@ angular.module('translate-chat.services', ['ionic'])
       getToUserIdFromLocal : function (userData) {
         var deferred = $q.defer();
         var promise = deferred.promise;
-        $q.when($sqliteService.getFirstItem(
-          translateChat.QUERIES.SELECT_TO_USER_ID_BY_CHAT_ROOM_ID_AND_USER_ID, [userData.chat_room_id, userData.user_id])
+        $q.when(
+          $sqliteService.getFirstItem(
+            translateChat.QUERIES.SELECT_TO_USER_ID_BY_CHAT_ROOM_ID_AND_USER_ID,
+            [userData.chat_room_id, userData.user_id]
+          )
         ).then(function (result) {
           deferred.resolve(result);
         }, function (error) {
@@ -552,7 +543,12 @@ angular.module('translate-chat.services', ['ionic'])
     // var server = 'http://192.168.1.48:3000'; // 할리스 커피
     // var server = 'http://172.30.1.30:3000'; // Coffine cafe
 
-    var socket = io.connect(server, {query : 'device_id=' + deviceId});
+    var socket = io.connect(server, {
+      query : 'device_id=' + deviceId,
+      reconnect : true,
+      'reconnection delay' : 500,
+      'max reconnection attempts' : 10
+    });
 
     return socketFactory({
       ioSocket : socket

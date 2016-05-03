@@ -2,22 +2,8 @@
  * @author Hana Lee
  * @since 2016-04-15 14:13
  */
-/*jslint
- browser  : true,
- continue : true,
- devel    : true,
- indent   : 2,
- maxerr   : 50,
- nomen    : true,
- plusplus : true,
- regexp   : true,
- vars     : true,
- white    : true,
- todo     : true,
- node     : true
- */
-/*global angular, cordova, StatusBar, ionic, Ionic */
 
+/*globals Ionic */
 angular.module('translate-chat', [
     'ionic', 'ngCordova',
     'translate-chat.friends-controller', 'translate-chat.chats-controller', 'translate-chat.chatRooms-controller',
@@ -51,7 +37,9 @@ angular.module('translate-chat', [
 
       $rootScope.first_run = !window.localStorage.getItem('translate-chat-device-id');
 
-      ionic.Platform.isNativeBrowser = (!ionic.Platform.isAndroid() && !ionic.Platform.isIOS());
+      /** @prop {Function} isIOS */
+      var ionicPlatform = ionic.Platform;
+      ionic.Platform.isNativeBrowser = (!ionicPlatform.isAndroid() && !ionicPlatform.isIOS());
 
       function prepareDatabase() {
         $sqliteService.preloadDataBase(true).then(function (result) {
@@ -90,7 +78,7 @@ angular.module('translate-chat', [
           }
         });
         push.register(function (token) {
-          console.log("Device token:", token.token);
+          console.log('Device token : ', token.token);
           localStorage.setItem('translate-chat-device-token', token.token);
           push.saveToken(token);  // persist the token in the Ionic Platform
 

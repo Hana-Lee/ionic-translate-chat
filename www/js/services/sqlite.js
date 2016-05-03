@@ -2,22 +2,7 @@
  * @author Hana Lee
  * @since 2016-04-15 14:13
  */
-/*jslint
- browser  : true,
- continue : true,
- devel    : true,
- indent   : 2,
- maxerr   : 50,
- nomen    : true,
- plusplus : true,
- regexp   : true,
- vars     : true,
- white    : true,
- todo     : true,
- unparam  : true,
- node     : true
- */
-/*global angular, translateChat */
+
 (function () {
   'use strict';
 
@@ -27,10 +12,10 @@
 
     function _openDatabase(type) {
       if (type === 'browser') {
-        _db = window.openDatabase("translate-chat.db", "1.0", "Database", 200000);
+        _db = window.openDatabase('translate-chat.db', '1.0', 'Database', 200000);
       } else {
         _db = window.sqlitePlugin.openDatabase({
-          name : "translate-chat.db",
+          name : 'translate-chat.db',
           location : 2,
           createFromLocation : 1
         });
@@ -69,7 +54,7 @@
           return deferred.resolve(res.rows.item(0));
         }
 
-        return deferred.reject("There aren't items matching");
+        return deferred.reject('There aren\'t items matching');
       }, function (err) {
         return deferred.reject(err);
       });
@@ -113,10 +98,9 @@
 
       console.log('preload data base');
 
-      //window.open("data:text/plain;charset=utf-8," + JSON.stringify({ data: window.queries.join('').replace(/\\n/g, '\n') }));
       if (window.sqlitePlugin === undefined) {
         if (enableLog) {
-          console.log('%c ***************** Starting the creation of the database ***************** ', 'background: #222; color: #bada55');
+          console.log('%c **** Starting the creation of the database **** ', 'background: #222; color: #bada55');
         }
         self.db().transaction(function (tx) {
           var i, query, queriesLength = translateChat.prepareQueries.length;
@@ -132,13 +116,13 @@
           deferred.reject(error);
         }, function () {
           if (enableLog) {
-            console.log('%c ***************** Completing the creation of the database ***************** ', 'background: #222; color: #bada55');
+            console.log('%c **** Completing the creation of the database **** ', 'background: #222; color: #bada55');
           }
-          deferred.resolve("OK");
+          deferred.resolve('OK');
         });
       } else {
         self.db();
-        deferred.resolve("OK");
+        deferred.resolve('OK');
       }
 
       return deferred.promise;
