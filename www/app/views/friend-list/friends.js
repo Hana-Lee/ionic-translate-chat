@@ -49,7 +49,7 @@ angular.module('translate-chat.friends-controller', ['ionic'])
         console.log('join', user);
       };
 
-      $ionicModal.fromTemplateUrl('templates/user-list-modal.html', {
+      $ionicModal.fromTemplateUrl('app/views/friend-list/modal/user-list-modal.html', {
         scope : $scope,
         animation : 'slide-in-down'
       }).then(function (userListModal) {
@@ -153,7 +153,7 @@ angular.module('translate-chat.friends-controller', ['ionic'])
         console.log('friend view enter', $scope.user);
       });
 
-      $ionicModal.fromTemplateUrl('templates/user-name-input-modal.html', {
+      $ionicModal.fromTemplateUrl('app/views/friend-list/modal/user-name-input-modal.html', {
         scope : $scope,
         animation : 'slide-in-down'
       }).then(function (modal) {

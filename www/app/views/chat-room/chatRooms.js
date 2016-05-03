@@ -233,7 +233,7 @@ angular.module('translate-chat.chatRooms-controller', [])
         localStorage['userMessage-' + $scope.toUser.user_id] = newValue || '';
       });
 
-      $ionicModal.fromTemplateUrl('templates/show-image-modal.html', {
+      $ionicModal.fromTemplateUrl('app/views/chat-room/modal/show-image-modal.html', {
         scope: $scope,
         animation: 'slide-in-up'
       }).then(function(modal) {
@@ -353,7 +353,7 @@ angular.module('translate-chat.chatRooms-controller', [])
         });
       };
 
-      $ionicModal.fromTemplateUrl('templates/chat-room-setting.html', {
+      $ionicModal.fromTemplateUrl('app/views/chat-room/modal/chat-room-setting.html', {
         scope : $scope,
         animation : 'slide-in-up'
       }).then(function (modal) {
