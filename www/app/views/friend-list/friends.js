@@ -5,9 +5,9 @@
 
 angular.module('translate-chat.friends-controller', ['ionic'])
   .controller('FriendsCtrl',
-    function ($ionicPlatform, $scope, $rootScope, $ionicTabsDelegate, Friends,
+    function ($ionicPlatform, $scope, $rootScope, $ionicTabsDelegate, FriendService,
               $ionicHistory,
-              $ionicModal, UserService, Chats, Device, Socket, _, $state) {
+              $ionicModal, UserService, ChatService, DeviceService, SocketService, _, $state) {
       'use strict';
 
       $scope.friends = [];
@@ -19,12 +19,12 @@ angular.module('translate-chat.friends-controller', ['ionic'])
       var initializing = false;
       var dbInitializeComplete = false;
 
-      Socket.on('addedFriend', function (data) {
+      SocketService.on('addedFriend', function (data) {
         if (data.error) {
           console.error('added friend error : ', data);
         } else {
           UserService.createUserOnLocal(data.result).then(function () {
-            Friends.addToLocal($scope.user, data.result).then(function () {
+            FriendService.addToLocal($scope.user, data.result).then(function () {
               $scope.friends.push(data.result);
             }, function (error) {
               console.error('insert friend to local error : ', error);
@@ -77,8 +77,8 @@ angular.module('translate-chat.friends-controller', ['ionic'])
 
       $scope.addFriend = function (friend) {
         UserService.createUserOnLocal(friend).then(function () {
-          Friends.add($scope.user, friend).then(function () {
-            Friends.getAll($scope.user).then(function (result) {
+          FriendService.add($scope.user, friend).then(function () {
+            FriendService.getAll($scope.user).then(function (result) {
               $scope.friends = result;
               console.log('friends list', $scope.friends);
               $scope.userListModal.hide();
@@ -96,7 +96,7 @@ angular.module('translate-chat.friends-controller', ['ionic'])
       });
 
       function _initializeFriends(userData) {
-        Friends.getAll(userData).then(function (result) {
+        FriendService.getAll(userData).then(function (result) {
           $scope.friends = result;
           initializing = false;
           $rootScope.first_run = false;
@@ -112,7 +112,7 @@ angular.module('translate-chat.friends-controller', ['ionic'])
         }
         initializing = true;
         var params = {
-          device_id : Device.getId()
+          device_id : DeviceService.getId()
         };
         UserService.retrieveAlreadyRegisteredUserByDeviceIdOnLocal(params)
           .then(function (result) {
@@ -172,15 +172,15 @@ angular.module('translate-chat.friends-controller', ['ionic'])
       });
 
       $scope.createUser = function () {
-        var deviceId = Device.getId();
-        var deviceType = Device.getType();
-        var deviceVersion = Device.getVersion();
-        var deviceToken = Device.getToken();
+        var deviceId = DeviceService.getId();
+        var deviceType = DeviceService.getType();
+        var deviceVersion = DeviceService.getVersion();
+        var deviceToken = DeviceService.getToken();
 
         var params = {
           user_name : $scope.user.user_name, device_id : deviceId,
           device_type : deviceType, device_version : deviceVersion,
-          user_face : 'img/sarah.png', device_token : deviceToken,
+          user_face : 'assets/img/sarah.png', device_token : deviceToken,
           online : 1
         };
         UserService.createUserOnServer(params)
@@ -200,7 +200,7 @@ angular.module('translate-chat.friends-controller', ['ionic'])
       };
 
       function joinChatRoom(chatRoomId, friend) {
-        Chats.join(chatRoomId, $scope.user, friend).then(function () {
+        ChatService.join(chatRoomId, $scope.user, friend).then(function () {
           var viewId = $ionicHistory.viewHistory().currentView.viewId;
           $state.go('tab.chat-room', {chatRoomId : chatRoomId, backViewId : viewId});
         }, function (error) {
@@ -209,13 +209,13 @@ angular.module('translate-chat.friends-controller', ['ionic'])
       }
 
       $scope.joinChatRoom = function (friend) {
-        Chats.getChatRoomIdByUserAndFriend($scope.user, friend).then(function (result) {
+        ChatService.getChatRoomIdByUserAndFriend($scope.user, friend).then(function (result) {
           console.log('get chat room id by user and friend result : ', result);
           joinChatRoom(result, friend);
         }, function (error) {
           console.error('get chat room id by user and friend error : ', error);
 
-          Chats.create().then(function (createdChatRoomId) {
+          ChatService.createRoom().then(function (createdChatRoomId) {
             joinChatRoom(createdChatRoomId, friend);
           }, function (error) {
             console.error('create chat room error : ', error);

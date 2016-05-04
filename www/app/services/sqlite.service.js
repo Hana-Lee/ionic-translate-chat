@@ -6,9 +6,21 @@
 (function () {
   'use strict';
 
-  angular.module('translate-chat').service('$sqliteService', function ($q, $rootScope, $cordovaSQLite) {
-    var self = this;
+  angular.module('translate-chat').factory('SqliteService', SqliteService);
+
+  SqliteService.$inject = ['$q', '$rootScope', '$cordovaSQLite'];
+
+  /* @ngInject */
+  function SqliteService($q, $rootScope, $cordovaSQLite) {
     var _db;
+
+    return {
+      getFirstItem : getFirstItem,
+      getFirstOrDefaultItem : getFirstOrDefaultItem,
+      getItems : getItems,
+      preloadDataBase : preloadDataBase,
+      executeSql : executeSql
+    };
 
     function _openDatabase(type) {
       if (type === 'browser') {
@@ -22,7 +34,7 @@
       }
     }
 
-    self.db = function () {
+    function db() {
       if (!_db) {
         if (window.sqlitePlugin !== undefined) {
           console.log('window sqlite plugin use');
@@ -44,11 +56,11 @@
         }
       }
       return _db;
-    };
+    }
 
-    self.getFirstItem = function (query, parameters) {
+    function getFirstItem(query, parameters) {
       var deferred = $q.defer();
-      self.executeSql(query, parameters).then(function (res) {
+      executeSql(query, parameters).then(function (res) {
 
         if (res.rows.length > 0) {
           return deferred.resolve(res.rows.item(0));
@@ -60,11 +72,11 @@
       });
 
       return deferred.promise;
-    };
+    }
 
-    self.getFirstOrDefaultItem = function (query, parameters) {
+    function getFirstOrDefaultItem(query, parameters) {
       var deferred = $q.defer();
-      self.executeSql(query, parameters).then(function (res) {
+      executeSql(query, parameters).then(function (res) {
 
         if (res.rows.length > 0) {
           return deferred.resolve(res.rows.item(0));
@@ -76,11 +88,11 @@
       });
 
       return deferred.promise;
-    };
+    }
 
-    self.getItems = function (query, parameters) {
+    function getItems(query, parameters) {
       var deferred = $q.defer();
-      self.executeSql(query, parameters).then(function (res) {
+      executeSql(query, parameters).then(function (res) {
         var items = [], i;
         for (i = 0; i < res.rows.length; i++) {
           items.push(res.rows.item(i));
@@ -91,9 +103,9 @@
       });
 
       return deferred.promise;
-    };
+    }
 
-    self.preloadDataBase = function (enableLog) {
+    function preloadDataBase(enableLog) {
       var deferred = $q.defer();
 
       console.log('preload data base');
@@ -102,7 +114,7 @@
         if (enableLog) {
           console.log('%c **** Starting the creation of the database **** ', 'background: #222; color: #bada55');
         }
-        self.db().transaction(function (tx) {
+        db().transaction(function (tx) {
           var i, query, queriesLength = translateChat.prepareQueries.length;
           for (i = 0; i < queriesLength; i++) {
             query = translateChat.prepareQueries[i].replace(/\\n/g, '\n');
@@ -121,15 +133,15 @@
           deferred.resolve('OK');
         });
       } else {
-        self.db();
+        db();
         deferred.resolve('OK');
       }
 
       return deferred.promise;
-    };
+    }
 
-    self.executeSql = function (query, parameters) {
-      return $cordovaSQLite.execute(self.db(), query, parameters);
-    };
-  });
+    function executeSql(query, parameters) {
+      return $cordovaSQLite.execute(db(), query, parameters);
+    }
+  }
 }());

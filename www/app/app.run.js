@@ -9,19 +9,18 @@
 
   angular.module('translate-chat').run(run);
 
-  // run.$inject([]);
+  run.$inject = ['$ionicPlatform', '$rootScope', 'SqliteService', '$state', 'SocketService',
+    'ChatService', 'UserService', '$ionicHistory'];
 
   /* @ngInject */
-  function run($ionicPlatform, $rootScope, $sqliteService, $state, Socket, Chats, UserService, $ionicHistory) {
+  function run($ionicPlatform, $rootScope, SqliteService, $state, SocketService,
+               ChatService, UserService, $ionicHistory) {
     $ionicPlatform.ready(function () {
-      // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
-      // for form inputs)
       if (window.cordova && window.cordova.plugins && window.cordova.plugins.Keyboard) {
         cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
         cordova.plugins.Keyboard.disableScroll(true);
       }
       if (window.StatusBar) {
-        // org.apache.cordova.statusbar required
         window.StatusBar.styleDefault();
       }
 
@@ -40,7 +39,7 @@
       ionic.Platform.isNativeBrowser = (!ionicPlatform.isAndroid() && !ionicPlatform.isIOS());
 
       function prepareDatabase() {
-        $sqliteService.preloadDataBase(true).then(function (result) {
+        SqliteService.preloadDataBase(true).then(function (result) {
           console.log('preload database done', JSON.stringify(result));
           $rootScope.$emit('DB_ready');
         }, function (error) {
@@ -59,8 +58,8 @@
             var chatRoomId = payload.chat_room_id;
             if ($state.current.name !== 'tab.chat-room') {
               UserService.get().then(function (user) {
-                Chats.getToUser({user_id : user.user_id, chat_room_id : chatRoomId}).then(function (friend) {
-                  Chats.join(chatRoomId, user, friend).then(function () {
+                ChatService.getToUser({user_id : user.user_id, chat_room_id : chatRoomId}).then(function (friend) {
+                  ChatService.join(chatRoomId, user, friend).then(function () {
                     var viewId = $ionicHistory.viewHistory().currentView.viewId;
                     $state.go('tab.chat-room', {chatRoomId : chatRoomId, backViewId : viewId});
                   }, function (error) {
@@ -86,13 +85,11 @@
 
       document.addEventListener('resume', function () {
         console.log('app resume state');
-        if ($state.current.name === 'tab.chat-room') {
-          var params = {
-            user_id : $rootScope.user_id,
-            online : 1
-          };
-          Socket.emit('updateUserOnlineState', params);
-        }
+        var params = {
+          user_id : $rootScope.user_id,
+          online : 1
+        };
+        SocketService.emit('updateUserOnlineState', params);
       });
 
       document.addEventListener('pause', function () {
@@ -101,7 +98,7 @@
           user_id : $rootScope.user_id,
           online : 0
         };
-        Socket.emit('updateUserOnlineState', params);
+        SocketService.emit('updateUserOnlineState', params);
       });
     });
   }

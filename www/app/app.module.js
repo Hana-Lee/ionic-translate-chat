@@ -8,12 +8,11 @@
   'use strict';
   angular.module('translate-chat',
     [
-      'ionic', 'ngCordova',
+      'ionic', 'ngCordova', 'btford.socket-io',
       'translate-chat.friends-controller',
       'translate-chat.chats-controller',
       'translate-chat.chatRooms-controller',
       'translate-chat.account-controller',
-      'translate-chat.services',
-      'monospaced.elastic', 'angularMoment', 'btford.socket-io', 'underscore', 'angular-md5'
+      'monospaced.elastic', 'angularMoment', 'underscore', 'angular-md5'
     ]);
 })();

@@ -4,7 +4,7 @@
  */
 
 angular.module('translate-chat.chats-controller', [])
-  .controller('ChatsCtrl', function ($scope, Chats, UserService, $state, $ionicHistory, $ionicTabsDelegate) {
+  .controller('ChatsCtrl', function ($scope, ChatService, UserService, $state, $ionicHistory, $ionicTabsDelegate) {
     'use strict';
 
     $scope.chats = [];
@@ -14,7 +14,7 @@ angular.module('translate-chat.chats-controller', [])
       var user = UserService.get();
       user.then(function (result) {
         $scope.user = result;
-        Chats.all(result).then(function (result) {
+        ChatService.getAllRoom(result).then(function (result) {
           $scope.chats = result;
         });
       });
@@ -25,7 +25,7 @@ angular.module('translate-chat.chats-controller', [])
     });
 
     $scope.joinChatRoom = function(chat) {
-      Chats.join(chat.chat_room_id, $scope.user, chat.friend).then(function () {
+      ChatService.join(chat.chat_room_id, $scope.user, chat.friend).then(function () {
         var viewId = $ionicHistory.viewHistory().currentView.viewId;
         $state.go('tab.chat-room', {chatRoomId : chat.chat_room_id, backViewId : viewId});
       }, function (error) {
@@ -34,6 +34,6 @@ angular.module('translate-chat.chats-controller', [])
     };
 
     $scope.remove = function (chat) {
-      Chats.remove(chat);
+      ChatService.remove(chat);
     };
   });

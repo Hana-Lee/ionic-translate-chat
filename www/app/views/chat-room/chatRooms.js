@@ -7,8 +7,8 @@
 angular.module('translate-chat.chatRooms-controller', [])
   .controller('ChatRoomsCtrl',
     function ($scope, $rootScope, $state, $stateParams, MessageService, $ionicActionSheet,
-              $ionicScrollDelegate, $timeout, Chats, $ionicModal,
-              $ionicTabsDelegate, Socket, UserService, $ionicHistory, _, SettingService,
+              $ionicScrollDelegate, $timeout, ChatService, $ionicModal,
+              $ionicTabsDelegate, SocketService, UserService, $ionicHistory, _, SettingService,
               $cordovaToast, ImageFileUploader, $cordovaCamera, md5) {
       'use strict';
 
@@ -22,6 +22,7 @@ angular.module('translate-chat.chatRooms-controller', [])
       var backViewId = $stateParams.backViewId;
       var user = UserService.get();
       $scope.imageUploadUrl = 'http://192.168.200.114:3000/api/image';
+      // $scope.imageUploadUrl = 'http://ihanalee.com:3739/api/image';
 
       $scope.user = {};
       $scope.toUser = {};
@@ -38,7 +39,7 @@ angular.module('translate-chat.chatRooms-controller', [])
       user.then(function (result) {
         $scope.user = result;
         console.log('user ', $scope.user);
-        Chats.getToUser({user_id : $scope.user.user_id, chat_room_id : chatRoomId}).then(
+        ChatService.getToUser({user_id : $scope.user.user_id, chat_room_id : chatRoomId}).then(
           function (result) {
             $scope.toUser = result;
             console.log('to user', result);
@@ -46,7 +47,7 @@ angular.module('translate-chat.chatRooms-controller', [])
               user_id : $scope.user.user_id,
               online : 1
             };
-            Socket.emit('updateUserOnlineState', params);
+            SocketService.emit('updateUserOnlineState', params);
 
             SettingService.getSettingsList({
               user_id : $scope.user.user_id,
@@ -162,7 +163,7 @@ angular.module('translate-chat.chatRooms-controller', [])
       $scope.$on('$ionicView.enter', function () {
         console.log('ChatRooms $ionicView.enter');
 
-        Socket.on('new_message', function (data) {
+        SocketService.on('new_message', function (data) {
           $scope.doneLoading = true;
           if (data.error) {
             console.error('new message receive error : ', data.error);
@@ -218,7 +219,7 @@ angular.module('translate-chat.chatRooms-controller', [])
           user_id : $scope.user.user_id,
           online : 0
         };
-        Socket.emit('updateUserOnlineState', params);
+        SocketService.emit('updateUserOnlineState', params);
       });
 
       $scope.$on('$ionicView.beforeLeave', function () {
@@ -274,8 +275,10 @@ angular.module('translate-chat.chatRooms-controller', [])
               $scope.input.message = '';
 
               $timeout(function () {
-                Socket.emit('new_message', {
+                SocketService.emit('new_message', {
                   type : message.type, text : message.text,
+                  user_id : message.user_id,
+                  user_name : message.user_name,
                   friends : [message.to_user]
                 });
               }, 1);
@@ -324,8 +327,10 @@ angular.module('translate-chat.chatRooms-controller', [])
               $scope.input.message = '';
 
               $timeout(function () {
-                Socket.emit('new_message', {
+                SocketService.emit('new_message', {
                   type : message.type, text : message.text,
+                  user_id : message.user_id,
+                  user_name : message.user_name,
                   friends : [message.to_user]
                 });
               }, 1);
@@ -385,8 +390,10 @@ angular.module('translate-chat.chatRooms-controller', [])
           // $scope.messages.push(message);
           viewScroll.scrollBottom(true);
 
-          Socket.emit('new_message', {
+          SocketService.emit('new_message', {
             type : message.type, text : message.text,
+            user_id : message.user_id,
+            user_name : message.user_name,
             friends : [message.to_user]
           });
         }, 500);
@@ -443,16 +450,16 @@ angular.module('translate-chat.chatRooms-controller', [])
     })
 
   // services
-  .factory('SettingService', function ($q, Socket) {
+  .factory('SettingService', function ($q, SocketService) {
     'use strict';
 
     return {
       updateTranslateSetting : function (userData) {
         var deferred = $q.defer();
 
-        Socket.emit('updateChatRoomSettingsTranslateKo', userData);
-        Socket.on('updatedChatRoomSettingsTranslateKo', function (data) {
-          Socket.removeListener('updatedChatRoomSettingsTranslateKo');
+        SocketService.emit('updateChatRoomSettingsTranslateKo', userData);
+        SocketService.on('updatedChatRoomSettingsTranslateKo', function (data) {
+          SocketService.removeListener('updatedChatRoomSettingsTranslateKo');
 
           if (data.error) {
             deferred.reject(data.error);
@@ -466,9 +473,9 @@ angular.module('translate-chat.chatRooms-controller', [])
       getSettingsList : function (userData) {
         var deferred = $q.defer();
 
-        Socket.emit('retrieveChatRoomSettingsList', userData);
-        Socket.on('retrievedChatRoomSettingsList', function (data) {
-          Socket.removeListener('retrievedChatRoomSettingsList');
+        SocketService.emit('retrieveChatRoomSettingsList', userData);
+        SocketService.on('retrievedChatRoomSettingsList', function (data) {
+          SocketService.removeListener('retrievedChatRoomSettingsList');
 
           if (data.error) {
             deferred.reject(data.error);
@@ -481,18 +488,18 @@ angular.module('translate-chat.chatRooms-controller', [])
       }
     };
   })
-  .factory('MessageService', function ($http, $q, Socket) {
+  .factory('MessageService', function ($http, $q, SocketService) {
     'use strict';
     var me = {};
 
     me.getUserMessages = function (chatRoomId) {
       var deferred = $q.defer();
 
-      Socket.emit('retrieveAllChatMessagesByChatRoomId', {
+      SocketService.emit('retrieveAllChatMessagesByChatRoomId', {
         chat_room_id : chatRoomId
       });
-      Socket.on('retrievedAllChatMessagesByChatRoomId', function (data) {
-        Socket.removeListener('retrievedAllChatMessagesByChatRoomId');
+      SocketService.on('retrievedAllChatMessagesByChatRoomId', function (data) {
+        SocketService.removeListener('retrievedAllChatMessagesByChatRoomId');
 
         if (data.error) {
           deferred.reject(data.error);
