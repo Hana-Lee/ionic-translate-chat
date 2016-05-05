@@ -4,7 +4,7 @@
  */
 
 angular.module('translate-chat.chats-controller', [])
-  .controller('ChatsCtrl', function ($scope, ChatService, UserService, $state, $ionicHistory, $ionicTabsDelegate) {
+  .controller('ChatsCtrl', function ($scope, $rootScope, ChatService, UserService, $state, $ionicHistory, $ionicTabsDelegate) {
     'use strict';
 
     $scope.chats = [];

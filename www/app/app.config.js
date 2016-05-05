@@ -12,6 +12,7 @@
 
   /* @ngInject */
   function config ($stateProvider, $urlRouterProvider, $ionicConfigProvider) {
+    console.log('config');
     if (ionic.Platform.isIOS()) {
       $ionicConfigProvider.scrolling.jsScrolling(true);
     }
@@ -24,7 +25,11 @@
     // Set up the various states which the app can be in.
     // Each state's controller can be found in controllers.js
     $stateProvider
-
+      .state('user-name', {
+        url : '/user-name',
+        templateUrl : 'app/views/user-name-input/user-name-input.html',
+        controller : 'UserNameInputCtrl'
+      })
     // setup an abstract state for the tabs directive
       .state('tab', {
         url : '/tab',
@@ -38,7 +43,7 @@
         views : {
           'tab-users' : {
             templateUrl : 'app/views/friend-list/tab-friends.html',
-            controller : 'FriendsCtrl'
+            controller : 'FriendListCtrl'
           }
         }
       })
@@ -70,7 +75,10 @@
         }
       });
 
-    // if none of the above states are matched, use this as the fallback
-    $urlRouterProvider.otherwise('/tab/friends');
+    if (localStorage.getItem('translate-chat-user-name')) {
+      $urlRouterProvider.otherwise('/tab/friends');
+    } else {
+      $urlRouterProvider.otherwise('/user-name');
+    }
   }
 })();

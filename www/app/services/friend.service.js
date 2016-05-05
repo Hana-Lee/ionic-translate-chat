@@ -9,10 +9,10 @@
     .module('translate-chat')
     .factory('FriendService', FriendService);
 
-  FriendService.$inject = ['$q', 'SqliteService', 'SocketService'];
+  FriendService.$inject = ['$q', 'SqliteService', 'SocketService', 'QUERIES'];
 
   /* @ngInject */
-  function FriendService($q, SqliteService, SocketService) {
+  function FriendService($q, SqliteService, SocketService, QUERIES) {
     return {
       add : add,
       addToServer : addToServer,
@@ -60,7 +60,7 @@
     function addToLocal(userData, friend) {
       var deferred = $q.defer();
 
-      $q.when(SqliteService.executeSql(translateChat.QUERIES.INSERT_FRIEND, [userData.user_id, friend.user_id]))
+      $q.when(SqliteService.executeSql(QUERIES.INSERT_FRIEND, [userData.user_id, friend.user_id]))
         .then(function (result) {
           deferred.resolve(result);
         }, function (error) {
@@ -74,7 +74,7 @@
     function getAll(userData) {
       var deferred = $q.defer();
 
-      $q.when(SqliteService.getItems(translateChat.QUERIES.SELECT_ALL_FRIENDS_BY_USER_ID, [userData.user_id]))
+      $q.when(SqliteService.getItems(QUERIES.SELECT_ALL_FRIENDS_BY_USER_ID, [userData.user_id]))
         .then(function (result) {
           console.log('get all friend : ', result);
           deferred.resolve(result);

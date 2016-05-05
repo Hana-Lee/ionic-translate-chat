@@ -16,6 +16,10 @@
   function run($ionicPlatform, $rootScope, SqliteService, $state, SocketService,
                ChatService, UserService, $ionicHistory) {
     $ionicPlatform.ready(function () {
+      console.log('ready');
+      if (!$rootScope.user || !$rootScope.user.user_name) {
+        $rootScope.user = {};
+      }
       if (window.cordova && window.cordova.plugins && window.cordova.plugins.Keyboard) {
         cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
         cordova.plugins.Keyboard.disableScroll(true);
@@ -31,8 +35,6 @@
       if ($rootScope.env.DEVELOPMENT) {
         window.localStorage.clear();
       }
-
-      $rootScope.first_run = !window.localStorage.getItem('translate-chat-device-id');
 
       /** @prop {Function} isIOS */
       var ionicPlatform = ionic.Platform;

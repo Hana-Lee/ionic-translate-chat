@@ -8,10 +8,10 @@
 
   angular.module('translate-chat').factory('ChatService', ChatService);
 
-  ChatService.$inject = ['$q', 'SocketService', 'SqliteService', '_', 'FriendService', 'UserService'];
+  ChatService.$inject = ['$q', 'SocketService', 'SqliteService', '_', 'FriendService', 'UserService', 'QUERIES'];
 
   /* @ngInject */
-  function ChatService($q, SocketService, SqliteService, _, FriendService, UserService) {
+  function ChatService($q, SocketService, SqliteService, _, FriendService, UserService, QUERIES) {
     var chatRoomIds = [];
     var chatRoomList = [];
 
@@ -68,7 +68,7 @@
       var deferred = $q.defer();
       var promise = deferred.promise;
       $q.when(
-        SqliteService.executeSql(translateChat.QUERIES.INSERT_CHAT_ROOM, [chatRoomId])
+        SqliteService.executeSql(QUERIES.INSERT_CHAT_ROOM, [chatRoomId])
       ).then(function (result) {
         deferred.resolve(result);
       }, function (error) {
@@ -206,7 +206,7 @@
       var deferred = $q.defer();
       $q.when(
         SqliteService.getFirstItem(
-          translateChat.QUERIES.SELECT_TO_USER_ID_BY_CHAT_ROOM_ID_AND_USER_ID,
+          QUERIES.SELECT_TO_USER_ID_BY_CHAT_ROOM_ID_AND_USER_ID,
           [userData.chat_room_id, userData.user_id]
         )
       ).then(function (result) {

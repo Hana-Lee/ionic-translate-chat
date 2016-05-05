@@ -8,73 +8,53 @@
 
   angular.module('translate-chat').factory('SqliteService', SqliteService);
 
-  SqliteService.$inject = ['$q', '$rootScope', '$cordovaSQLite'];
+  SqliteService.$inject = ['$q', '$rootScope', '$cordovaSQLite', 'QUERIES'];
 
   /* @ngInject */
-  function SqliteService($q, $rootScope, $cordovaSQLite) {
+  function SqliteService($q, $rootScope, $cordovaSQLite, QUERIES) {
     var _db;
 
     return {
       getFirstItem : getFirstItem,
-      getFirstOrDefaultItem : getFirstOrDefaultItem,
       getItems : getItems,
       preloadDataBase : preloadDataBase,
       executeSql : executeSql
     };
 
-    function _openDatabase(type) {
-      if (type === 'browser') {
-        _db = window.openDatabase('translate-chat.db', '1.0', 'Database', 200000);
-      } else {
+    function _openDatabase() {
+      if (window.sqlitePlugin !== undefined) {
         _db = window.sqlitePlugin.openDatabase({
           name : 'translate-chat.db',
           location : 2,
           createFromLocation : 1
         });
+      } else {
+        _db = window.openDatabase('translate-chat.db', '1.0', 'Database', 200000);
       }
     }
 
-    function db() {
-      if (!_db) {
-        if (window.sqlitePlugin !== undefined) {
-          console.log('window sqlite plugin use');
-          if ($rootScope.env.DEVELOPMENT) {
-            window.sqlitePlugin.deleteDatabase({name : 'translate-chat.db', location : 2}, function () {
-              console.log('delete success');
-              _openDatabase();
-            }, function () {
-              console.log('delete fail');
-              _openDatabase();
-            });
-          } else {
+    function _initialize() {
+      if (window.sqlitePlugin !== undefined) {
+        console.log('window sqlite plugin use');
+        if ($rootScope.env.DEVELOPMENT) {
+          window.sqlitePlugin.deleteDatabase({name : 'translate-chat.db', location : 2}, function () {
+            console.log('delete success');
             _openDatabase();
-          }
+          }, function () {
+            console.log('delete fail');
+            _openDatabase();
+          });
         } else {
-          // For debugging in the browser
-          console.log('window open database use');
-          _openDatabase('browser');
+          _openDatabase();
         }
+      } else {
+        // For debugging in the browser
+        console.log('window open database use');
+        _openDatabase();
       }
-      return _db;
     }
 
     function getFirstItem(query, parameters) {
-      var deferred = $q.defer();
-      executeSql(query, parameters).then(function (res) {
-
-        if (res.rows.length > 0) {
-          return deferred.resolve(res.rows.item(0));
-        }
-
-        return deferred.reject('There aren\'t items matching');
-      }, function (err) {
-        return deferred.reject(err);
-      });
-
-      return deferred.promise;
-    }
-
-    function getFirstOrDefaultItem(query, parameters) {
       var deferred = $q.defer();
       executeSql(query, parameters).then(function (res) {
 
@@ -93,11 +73,15 @@
     function getItems(query, parameters) {
       var deferred = $q.defer();
       executeSql(query, parameters).then(function (res) {
-        var items = [], i;
-        for (i = 0; i < res.rows.length; i++) {
-          items.push(res.rows.item(i));
+        if (res.rows.length > 0) {
+          var items = [], i, rowsLength = res.rows.length;
+          for (i = 0; i < rowsLength; i++) {
+            items.push(res.rows.item(i));
+          }
+          return deferred.resolve(items);
         }
-        return deferred.resolve(items);
+
+        return deferred.resolve(null);
       }, function (err) {
         return deferred.reject(err);
       });
@@ -110,17 +94,31 @@
 
       console.log('preload data base');
 
+      _initialize();
+
       if (window.sqlitePlugin === undefined) {
         if (enableLog) {
           console.log('%c **** Starting the creation of the database **** ', 'background: #222; color: #bada55');
         }
-        db().transaction(function (tx) {
-          var i, query, queriesLength = translateChat.prepareQueries.length;
+        _db.transaction(function (tx) {
+          var prepareQueries = [
+            QUERIES.CREATE_USERS,
+            QUERIES.CREATE_FRIENDS,
+            QUERIES.CREATE_CHAT_ROOMS,
+            QUERIES.CREATE_CHAT_ROOM_SETTINGS,
+            QUERIES.CREATE_CHAT_ROOM_USERS,
+            QUERIES.CREATE_CHAT_MESSAGES,
+            QUERIES.CREATE_UNIQUE_INDEX_CHAT_MESSAGES,
+            QUERIES.CREATE_COMPLEX_INDEX1_CHAT_MESSAGES,
+            QUERIES.CREATE_COMPLEX_INDEX2_CHAT_MESSAGES,
+            QUERIES.CREATE_COMPLEX_INDEX3_CHAT_MESSAGES
+          ];
+          var i, query, queriesLength = prepareQueries.length;
           for (i = 0; i < queriesLength; i++) {
-            query = translateChat.prepareQueries[i].replace(/\\n/g, '\n');
+            query = prepareQueries[i].replace(/\\n/g, '\n');
 
             if (enableLog) {
-              console.log(translateChat.prepareQueries[i]);
+              console.log(prepareQueries[i]);
             }
             tx.executeSql(query);
           }
@@ -133,7 +131,6 @@
           deferred.resolve('OK');
         });
       } else {
-        db();
         deferred.resolve('OK');
       }
 
@@ -141,7 +138,7 @@
     }
 
     function executeSql(query, parameters) {
-      return $cordovaSQLite.execute(db(), query, parameters);
+      return $cordovaSQLite.execute(_db, query, parameters);
     }
   }
 }());
