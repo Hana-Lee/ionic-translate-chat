@@ -21,6 +21,6 @@
   },
   "PRODUCTION" : {
     "serverUrl" : "http://ihanalee.com",
-    "serverPort" : 3000
+    "serverPort" : 3739
   }
 }
