@@ -13,15 +13,16 @@
   UserNameInputController.$inject = [
     '$scope', '$rootScope', '$state', 'UserService'
   ];
+
   function UserNameInputController($scope, $rootScope, $state, UserService) {
+    ionic.Platform.ready(ready);
 
-    $scope.userNameInputKeyEvent = function (event) {
-      if (event.keyCode === 13) {
-        $scope.createUser();
-      }
-    };
+    $scope.$on('$ionicView.enter', onViewEnter);
 
-    ionic.Platform.ready(function () {
+    $scope.userNameInputKeyEvent = userNameInputKeyEvent;
+    $scope.createUser = createUser;
+
+    function ready() {
       UserService.retrieveAlreadyRegisteredUserByDeviceIdOnServer()
         .then(function (result) {
           if (result) {
@@ -33,18 +34,24 @@
         }, function (error) {
           console.error('user already exist check on server error : ', error);
         });
-    });
+    }
 
-    $scope.$on('$ionicView.enter', function () {
+    function onViewEnter() {
       if (window.cordova && window.cordova.plugins && window.cordova.plugins.Keyboard) {
         cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
         cordova.plugins.Keyboard.disableScroll(true);
       }
 
       console.log('user name input view enter', $rootScope.user);
-    });
+    }
 
-    $scope.createUser = function () {
+    function userNameInputKeyEvent(event) {
+      if (event.keyCode === 13) {
+        $scope.createUser();
+      }
+    }
+
+    function createUser() {
       UserService.createUserOnServer($rootScope.user)
         .then(function (result) {
           UserService.createUserOnLocal(result)
@@ -57,6 +64,6 @@
         }, function (error) {
           console.error('create user on server error : ', error);
         });
-    };
+    }
   }
 })();
