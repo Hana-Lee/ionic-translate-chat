@@ -1,0 +1,26 @@
+{
+  "COFFINE" : {
+    "serverUrl" : "http://172.30.1.24",
+    "serverPort" : 3000
+  },
+  "EYEQ" : {
+    "serverUrl" : "http://192.168.200.114",
+    "serverPort" : 3000
+  },
+  "HOME" : {
+    "serverUrl" : "http://10.0.1.5",
+    "serverPort" : 3000
+  },
+  "TWOSOME" : {
+    "serverUrl" : "http://172.30.1.47",
+    "serverPort" : 3000
+  },
+  "HOLLYS" : {
+    "serverUrl" : "http://192.168.1.48",
+    "serverPort" : 3000
+  },
+  "PRODUCTION" : {
+    "serverUrl" : "http://ihanalee.com",
+    "serverPort" : 3000
+  }
+}

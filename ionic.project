@@ -2,6 +2,7 @@
   "name": "ionic-translate-chat",
   "app_id": "5095e4bb",
   "gulpStartupTasks": [
+    "replace-config",
     "sass",
     "watch"
   ],
