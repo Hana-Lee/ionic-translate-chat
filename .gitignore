@@ -7,3 +7,4 @@ plugins/
 
 .idea
 www/assets/lib/
+www/app/shared/config.js
