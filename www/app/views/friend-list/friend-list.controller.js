@@ -25,6 +25,9 @@
       } else {
         UserService.createUserOnLocal(data.result).then(function () {
           FriendService.addToLocal($rootScope.user, data.result).then(function () {
+            if (!$scope.friends) {
+              $scope.friends = [];
+            }
             $scope.friends.push(data.result);
           }, function (error) {
             console.error('insert friend to local error : ', error);
@@ -84,7 +87,7 @@
     }
 
     $scope.$on('$ionicView.enter', function () {
-      if (!$rootScope.user.user_name) {
+      if (!localStorage.getItem('translate-chat-user-name')) {
         $state.go('user-name');
       } else if ($scope.friends.length === 0) {
         _initializeFriends($rootScope.user);
