@@ -8,7 +8,7 @@
   
   angular.module('translate-chat')
     .constant('CONFIG', {
-      serverUrl : 'http://172.20.10.3',
+      serverUrl : 'http://192.168.200.214',
       serverPort : '3000'
     });
 })();

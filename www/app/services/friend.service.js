@@ -9,10 +9,14 @@
     .module('translate-chat')
     .factory('FriendService', FriendService);
 
-  FriendService.$inject = ['$q', 'SqliteService', 'SocketService', 'QUERIES'];
+  FriendService.$inject = ['$q', 'SocketService', 'STORAGE_KEYS'];
 
-  /* @ngInject */
-  function FriendService($q, SqliteService, SocketService, QUERIES) {
+  function FriendService($q, SocketService, STORAGE_KEYS) {
+    var friends = [];
+    if (localStorage.getItem(STORAGE_KEYS.FRIENDS)) {
+      friends = JSON.parse(localStorage.getItem(STORAGE_KEYS.FRIENDS));
+    }
+
     return {
       add : add,
       addToServer : addToServer,
@@ -20,68 +24,55 @@
       getAll : getAll
     };
 
-    function add(userData, friend) {
+    function add(user, friend) {
       var deferred = $q.defer();
 
-      addToServer(userData, friend).then(function (serverResult) {
-        console.log('create friend on server success : ', serverResult);
-        addToLocal(userData, friend).then(function (localResult) {
-          console.log('create friend on local success : ', localResult);
-          deferred.resolve(localResult);
-        }, function (localError) {
-          console.error('create friend on local error : ', localError);
-          deferred.reject(localError);
-        });
-      }, function (serverError) {
-        console.error('create friend on server error : ', JSON.stringify(serverError));
-        deferred.reject(serverError);
+      addToServer(user, friend).then(function (result) {
+        addToLocal(friend);
+        deferred.resolve(result);
+      }, function (error) {
+        deferred.reject(error);
       });
 
       return deferred.promise;
     }
 
-    function addToServer(userData, friend) {
+    function addToServer(user, friend) {
       var deferred = $q.defer();
 
-      SocketService.emit('createFriend', {user : userData, friend : friend});
+      SocketService.emit('createFriend', {user : user, friend : friend});
       SocketService.on('createdFriend', function (data) {
         SocketService.removeListener('createdFriend');
-        console.log('creation friend on server', data);
+
         if (data.error) {
           deferred.reject(data);
         } else {
-          deferred.resolve(data);
+          deferred.resolve(data.result);
         }
       });
 
       return deferred.promise;
     }
 
-    function addToLocal(userData, friend) {
-      var deferred = $q.defer();
-
-      $q.when(SqliteService.executeSql(QUERIES.INSERT_FRIEND, [userData.user_id, friend.user_id]))
-        .then(function (result) {
-          deferred.resolve(result);
-        }, function (error) {
-          console.error('create friend on local error : ', JSON.stringify(error));
-          deferred.reject(error);
-        });
-
-      return deferred.promise;
+    function addToLocal(friend) {
+      friends.push(friend);
+      localStorage.setItem(STORAGE_KEYS.FRIENDS, JSON.stringify(friends));
     }
 
     function getAll(userData) {
       var deferred = $q.defer();
 
-      $q.when(SqliteService.getItems(QUERIES.SELECT_ALL_FRIENDS_BY_USER_ID, [userData.user_id]))
-        .then(function (result) {
-          console.log('get all friend : ', result);
-          deferred.resolve(result);
-        }, function (error) {
-          console.error('get all friend error : ', error);
-          deferred.reject(error);
-        });
+      SocketService.emit('retrieveAllFriends', userData);
+      SocketService.on('retrievedAllFriends', function (data) {
+        SocketService.removeListener('retrievedAllFriends');
+        if (data.error) {
+          deferred.reject(data);
+        } else {
+          friends = data.result;
+          localStorage.setItem(STORAGE_KEYS.FRIENDS, JSON.stringify(friends));
+          deferred.resolve(friends);
+        }
+      });
 
       return deferred.promise;
     }

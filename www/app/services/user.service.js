@@ -5,54 +5,72 @@
 (function () {
   'use strict';
 
-  angular.module('translate-chat').factory('UserService', UserService);
+  angular
+    .module('translate-chat')
+    .factory('UserService', UserService);
 
-  UserService.$inject = ['$q', 'SqliteService', 'DeviceService', 'SocketService', 'QUERIES'];
+  UserService.$inject = [
+    '$q', 'DeviceService', 'SocketService', 'STORAGE_KEYS'
+  ];
 
-  /* @ngInject */
-  function UserService($q, SqliteService, DeviceService, SocketService, QUERIES) {
-    var currentUser;
+  function UserService($q, DeviceService, SocketService, STORAGE_KEYS) {
+    var currentUser = {};
+
+    if (localStorage.getItem(STORAGE_KEYS.USER)) {
+      currentUser = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER));
+    }
 
     return {
       get : get,
-      createUserOnServer : createUserOnServer,
-      createUserOnLocal : createUserOnLocal,
-      retrieveAlreadyRegisteredUserByDeviceIdOnServer : retrieveAlreadyRegisteredUserByDeviceIdOnServer,
-      retrieveAlreadyRegisteredUserByDeviceIdOnLocal : retrieveAlreadyRegisteredUserByDeviceIdOnLocal,
-      getAllUserFromServer : getAllUserFromServer,
-      getByUserId : getByUserId
+      createUser : createUser,
+      getAll : getAll,
+      updateOnlineState : updateOnlineState
     };
 
     function get() {
+      return currentUser;
+    }
+
+    function createUser(userData) {
       var deferred = $q.defer();
-      if (!currentUser) {
-        var deviceId = localStorage.getItem('translate-chat-device-id');
-        if (!deviceId) {
-          DeviceService.getId();
+      _getUserByUserNameFromServer(userData).then(
+        function (getResult) {
+          if (getResult) {
+            _checkToken(getResult);
+            _createUserOnLocal(getResult);
+            updateOnlineState(true);
+            deferred.resolve(getResult);
+          } else {
+            _createUserOnServer(userData)
+              .then(function (createdResult) {
+                _checkToken(createdResult);
+                _createUserOnLocal(createdResult);
+                deferred.resolve(createdResult);
+              }, function (error) {
+                console.error('create user on server error : ', error);
+                deferred.reject(error);
+              });
+          }
+        },
+        function (error) {
+          console.error('get user by user name from server error : ', error);
+          deferred.reject(error);
         }
-        SqliteService.getFirstItem(QUERIES.SELECT_USER_BY_DEVICE_ID, [deviceId])
-          .then(function (result) {
-            currentUser = result;
-            deferred.resolve(result);
-          }, function (error) {
-            console.error('select user by device id error : ', error);
-            deferred.reject(error);
-          });
-      } else {
-        deferred.resolve(currentUser);
-      }
+      );
+
       return deferred.promise;
     }
 
-    function _settingLocalStorage(userData) {
-      localStorage.setItem('translate-chat-user-id', userData.user_id);
-      localStorage.setItem('translate-chat-user-name', userData.user_name);
-      localStorage.setItem('translate-chat-device-id', userData.device_id);
-      localStorage.setItem('translate-chat-device-token', userData.device_token);
-      localStorage.setItem('translate-chat-user-info', JSON.stringify(userData));
+    function _checkToken(userData) {
+      var token = DeviceService.getToken();
+      console.log('check token : ', token, userData);
+      if (userData.device_token !== token) {
+        userData.device_token = token;
+        DeviceService.updateToken(userData, token);
+      }
     }
 
-    function createUserOnServer(userData) {
+    function _createUserOnServer(userData) {
       var deferred = $q.defer();
 
       var deviceId = DeviceService.getId();
@@ -73,7 +91,6 @@
         if (data.error) {
           deferred.reject(data);
         } else {
-          _settingLocalStorage(data.result);
           currentUser = data.result;
           deferred.resolve(data.result);
         }
@@ -81,38 +98,19 @@
       return deferred.promise;
     }
 
-    function createUserOnLocal(userData) {
-      var deferred = $q.defer();
-
-      $q.when(SqliteService.executeSql(
-        QUERIES.INSERT_USER,
-        [
-          userData.user_id, userData.user_name, userData.user_face, userData.device_token,
-          userData.device_id, userData.device_type, userData.device_version,
-          userData.socket_id, userData.online, userData.connection_time, userData.created
-        ]
-      )).then(function () {
-        _settingLocalStorage(userData);
-        currentUser = userData;
-        deferred.resolve(userData);
-      }, function (error) {
-        deferred.reject(error);
-      });
-
-      return deferred.promise;
+    function _createUserOnLocal(userData) {
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
+      currentUser = userData;
+      SocketService.emit('updateSocketId', {user_id : currentUser.user_id});
     }
 
-    function retrieveAlreadyRegisteredUserByDeviceIdOnServer() {
+    function _getUserByUserNameFromServer(userData) {
       var deferred = $q.defer();
-      var deviceId = DeviceService.getId();
-      SocketService.emit('retrieveAlreadyRegisteredUserByDeviceId', {device_id : deviceId});
-      SocketService.on('retrievedAlreadyRegisteredUserByDeviceId', function (data) {
-        SocketService.removeListener('retrievedAlreadyRegisteredUserByDeviceId');
-
+      SocketService.emit('retrieveUserByUserName', userData);
+      SocketService.on('retrievedUserByUserName', function (data) {
         if (data.error) {
           deferred.reject(data);
         } else {
-          this.user = data.result;
           deferred.resolve(data.result);
         }
       });
@@ -120,23 +118,7 @@
       return deferred.promise;
     }
 
-    function retrieveAlreadyRegisteredUserByDeviceIdOnLocal() {
-      var deferred = $q.defer();
-      var deviceId = DeviceService.getId();
-
-      $q.when(SqliteService.getFirstItem(QUERIES.SELECT_USER_BY_DEVICE_ID, [deviceId]))
-        .then(function (result) {
-          currentUser = result;
-          deferred.resolve(result);
-        }, function (error) {
-          console.log('select user by device id error : ', JSON.stringify(error));
-          deferred.reject(error);
-        });
-
-      return deferred.promise;
-    }
-
-    function getAllUserFromServer(userData) {
+    function getAll(userData) {
       var deferred = $q.defer();
       SocketService.emit('retrieveAllUsers');
       SocketService.on('retrievedAllUsers', function (data) {
@@ -158,42 +140,12 @@
       return deferred.promise;
     }
 
-    function _getByUserIdFromServer(userId) {
-      var deferred = $q.defer();
-      SocketService.emit('retrieveUserByUserId', {user_id : userId});
-      SocketService.on('retrievedUserByUserId', function (data) {
-        SocketService.removeListener('retrievedUserByUserId');
-
-        if (data.error) {
-          deferred.reject(data);
-        } else {
-          deferred.resolve(data.result);
-        }
-      });
-
-      return deferred.promise;
-    }
-
-    function _getByUserIdFromLocal(userId) {
-      return $q.when(SqliteService.getFirstItem(QUERIES.SELECT_USER_BY_USER_ID, [userId]));
-    }
-
-    function getByUserId(userId) {
-      var deferred = $q.defer();
-
-      _getByUserIdFromLocal(userId).then(function (result) {
-        deferred.resolve(result);
-      }, function (localError) {
-        console.error('get user by user id from local error : ', localError);
-        _getByUserIdFromServer(userId).then(function (result) {
-          deferred.resolve(result);
-        });
-      }).catch(function (error) {
-        console.error('get user by user id error : ', error);
-        deferred.reject(error);
-      });
-
-      return deferred.promise;
+    function updateOnlineState(state) {
+      var params = {
+        user_id : currentUser.user_id,
+        online : state ? 1 : 0
+      };
+      SocketService.emit('updateUserOnlineState', params);
     }
   }
 
