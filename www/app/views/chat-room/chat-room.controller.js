@@ -284,7 +284,7 @@
                 type : message.type, text : message.text,
                 user_id : message.user_id,
                 user_name : message.user_name,
-                friends : [message.to_user]
+                to_user : message.to_user
               });
             }, 1);
           }, function (error) {
@@ -336,7 +336,7 @@
                 type : message.type, text : message.text,
                 user_id : message.user_id,
                 user_name : message.user_name,
-                friends : [message.to_user]
+                to_user : message.to_user
               });
             }, 1);
           }, function (error) {
@@ -392,7 +392,7 @@
           type : message.type, text : message.text,
           user_id : message.user_id,
           user_name : message.user_name,
-          friends : [message.to_user]
+          to_user : message.to_user
         });
       }, 500);
     }

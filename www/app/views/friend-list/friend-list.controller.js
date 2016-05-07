@@ -50,11 +50,14 @@
     }
 
     function hideUserListModal() {
+      $scope.users = null;
       $scope.userListModal.hide();
     }
 
-    function addFriend(friend) {
-      FriendService.add($scope.user, friend).then(function () {
+    function addFriend(friend, doNotification) {
+      console.debug('call add friend : ', friend, $scope.friends);
+      FriendService.add($scope.user, friend, doNotification).then(function () {
+        console.debug('Friend add all done : ', friend, $scope.friends);
         $scope.friends.push(friend);
         hideUserListModal();
       }, function (error) {
@@ -67,7 +70,9 @@
     }
 
     function _initializeFriends(userData) {
+      console.debug('initialize friends : ', $scope.friends);
       FriendService.getAll(userData).then(function (result) {
+        console.debug('initialize friends done : ', $scope.friends, result);
         $scope.friends = result;
       }, function (error) {
         console.error('get all friends error : ', error);
@@ -98,8 +103,8 @@
       if (data.error) {
         console.error('added friend error : ', data);
       } else {
-        console.log('added friend : ', data.result);
-        addFriend(data.result);
+        console.log('added friend : ', data.result, $scope.friends);
+        addFriend(data.result, false);
       }
     }
   }

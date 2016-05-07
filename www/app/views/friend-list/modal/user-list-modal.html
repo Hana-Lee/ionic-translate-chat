@@ -6,7 +6,7 @@
   <ion-content>
     <ion-list>
       <ion-item class="item-remove-animate item-avatar item-icon-right item-text-wrap"
-                ng-repeat="user in users" ng-click="addFriend(user)">
+                ng-repeat="user in users" ng-click="addFriend(user, true)">
         <img ng-src="{{user.user_face}}">
         <h2>{{user.user_name}}</h2>
         <span>마지막접속 : </span><span am-time-ago="user.connection_time"></span>
