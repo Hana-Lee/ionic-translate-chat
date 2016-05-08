@@ -31,7 +31,7 @@
 
     function getChatRoom(friend) {
       return _.find(chatRoomList, function (chatRoom) {
-        return chatRoom.friend.user_id === friend.user_id;
+        return chatRoom.to_user.user_id === friend.user_id;
       });
     }
 
@@ -41,7 +41,7 @@
       SocketService.emit('joinChatRoom', {
         chat_room_id : chatRoomId,
         user : user,
-        friend : friend
+        to_user : friend
       });
       SocketService.on('joinedChatRoom', function (data) {
         SocketService.removeListener('joinedChatRoom');
@@ -50,7 +50,7 @@
           deferred.reject(data);
         } else {
           var chat = {
-            friend : friend,
+            to_user : friend,
             chat_room_id : data.result.chat_room_id,
             last_text : ''
           };
@@ -73,7 +73,7 @@
       });
 
       if (chatRoom) {
-        return chatRoom.friend;
+        return chatRoom.to_user;
       }
 
       return null;
@@ -95,10 +95,10 @@
             } else if (data.result && data.result.length > 0) {
               data.result.forEach(function (/** @prop {String} r.friend_id */r) {
                 var friend = _.find(result, function (f) {
-                  return r.friend_id === f.user_id;
+                  return r.to_user_id === f.user_id;
                 });
                 chatRoomList.push({
-                  friend : friend,
+                  to_user : friend,
                   chat_room_id : r.chat_room_id,
                   last_text : r.last_text
                 });
