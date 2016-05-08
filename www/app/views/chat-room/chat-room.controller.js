@@ -75,7 +75,6 @@
     $scope.toUser = ChatService.getToUserByChatRoomId(chatRoomId);
 
     UserService.updateOnlineState(true);
-    ChatService.joinChatRoom($scope.user, $scope.toUser, chatRoomId);
 
     $scope.settingsList = [{
       id : 'translate_ko',
@@ -107,7 +106,7 @@
 
     function createUID(value) {
       if (!_seed) {
-        _seed = (new Date()).valueOf();
+        _seed = new Date().getTime();
       }
       _seed++;
 
@@ -143,7 +142,6 @@
     }
 
     function keydownHandler(event) {
-      console.log('key down handler', event.keyCode);
       if (keyboardPluginAvailable()) {
         cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
       }
@@ -195,6 +193,7 @@
         if (data.error) {
           console.error('new message receive error : ', data.error);
         } else {
+          console.log('data.result : ', data.result);
           var fromUserId = $scope.toUser.user_id;
           if (data.result.user_name === $scope.user.user_name) {
             fromUserId = $scope.user.user_id;
@@ -206,6 +205,8 @@
             text : data.result.text,
             type : data.result.type
           });
+
+          ChatService.updateLastText(chatRoomId, data.result.text);
 
           $timeout(function () {
             viewScroll.scrollBottom(false);
@@ -281,7 +282,9 @@
 
             $timeout(function () {
               SocketService.emit('new_message', {
-                type : message.type, text : message.text,
+                chat_room_id : chatRoomId,
+                type : message.type,
+                text : message.text,
                 user_id : message.user_id,
                 user_name : message.user_name,
                 to_user : message.to_user
@@ -333,7 +336,9 @@
 
             $timeout(function () {
               SocketService.emit('new_message', {
-                type : message.type, text : message.text,
+                chat_room_id : chatRoomId,
+                type : message.type,
+                text : message.text,
                 user_id : message.user_id,
                 user_name : message.user_name,
                 to_user : message.to_user
@@ -389,7 +394,9 @@
         viewScroll.scrollBottom(true);
 
         SocketService.emit('new_message', {
-          type : message.type, text : message.text,
+          chat_room_id : chatRoomId,
+          type : message.type,
+          text : message.text,
           user_id : message.user_id,
           user_name : message.user_name,
           to_user : message.to_user

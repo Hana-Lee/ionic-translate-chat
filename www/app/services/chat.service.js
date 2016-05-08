@@ -25,7 +25,8 @@
       getChatRoom : getChatRoom,
       joinChatRoom : joinChatRoom,
       getToUserByChatRoomId : getToUserByChatRoomId,
-      getAllRoom : getAllRoom
+      getAllRoom : getAllRoom,
+      updateLastText : updateLastText
     };
 
     function getChatRoom(friend) {
@@ -56,7 +57,7 @@
 
           if (!chatRoomId) {
             chatRoomList.push(chat);
-            localStorage.setItem(STORAGE_KEYS.CHATS, JSON.stringify(chatRoomList));
+            _saveLocalStorage();
           }
 
           deferred.resolve(data.result);
@@ -84,14 +85,14 @@
 
       if (chatRoomList.length === 0) {
         FriendService.getAll(userData).then(function (result) {
-          console.log('result : ', result);
-          SocketService.emit('retrieveAllChatRoomIdsAndFriendIdAndLastTextByUserId', userData);
-          SocketService.on('retrievedAllChatRoomIdsAndFriendIdAndLastTextByUserId', function (data) {
-            SocketService.removeListener('retrievedAllChatRoomIdsAndFriendIdAndLastTextByUserId');
-            console.log('data : ', data);
+          console.log('get all friend result : ', result);
+          SocketService.emit('retrieveAllChatRoomByUserId', userData);
+          SocketService.on('retrievedAllChatRoomByUserId', function (data) {
+            SocketService.removeListener('retrievedAllChatRoomByUserId');
+            console.log('all chat room data : ', data);
             if (data.error) {
               deferred.reject(data);
-            } else if (data.result) {
+            } else if (data.result && data.result.length > 0) {
               data.result.forEach(function (/** @prop {String} r.friend_id */r) {
                 var friend = _.find(result, function (f) {
                   return r.friend_id === f.user_id;
@@ -102,10 +103,12 @@
                   last_text : r.last_text
                 });
               });
+              _saveLocalStorage();
               deferred.resolve(chatRoomList);
             } else {
               chatRoomList = [];
-              deferred.resolve([]);
+              _saveLocalStorage();
+              deferred.resolve(chatRoomList);
             }
           });
         }, function (error) {
@@ -116,6 +119,20 @@
         deferred.resolve(chatRoomList);
       }
       return promise;
+    }
+
+    function updateLastText(chatRoomId, text) {
+      var chatRoom = _.find(chatRoomList, function (chatRoom) {
+        return chatRoom.chat_room_id === chatRoomId;
+      });
+
+      chatRoom.last_text = text;
+
+      _saveLocalStorage();
+    }
+
+    function _saveLocalStorage() {
+      localStorage.setItem(STORAGE_KEYS.CHATS, JSON.stringify(chatRoomList));
     }
   }
 
