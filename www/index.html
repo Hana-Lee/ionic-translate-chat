@@ -37,7 +37,7 @@
     <script src="assets/lib/angular-socket-io/socket.js"></script>
 
     <!-- cordova script (this will be a 404 during development) -->
-    <!--<script src="lib/ngCordova/dist/ng-cordova.min.js"></script>-->
+    <!-- <script src="lib/ngCordova/dist/ng-cordova.min.js"></script> -->
     <!-- Cordova is bootstrapped by ionic-platform-web-client, uncomment this if you remove ionic-platform-web-client... -->
     <!-- <script src="cordova.js"></script> -->
 
@@ -55,6 +55,7 @@
     <script src="app/app.js"></script>
     <script src="app/shared/constants.js"></script>
     <script src="app/shared/config.js"></script>
+    <script src="app/shared/utils.js"></script>
     <script src="app/services/socket.service.js"></script>
     <script src="app/services/device.service.js"></script>
     <script src="app/services/user.service.js"></script>
@@ -62,8 +63,14 @@
     <script src="app/services/chat.service.js"></script>
     <script src="app/views/user-name-input/user-name-input.controller.js"></script>
     <script src="app/views/friend-list/friend-list.controller.js"></script>
-    <script src="app/views/chat-list/chats.controller.js"></script>
+    <script src="app/views/chat-list/chat-list.controller.js"></script>
     <script src="app/views/chat-room/chat-room.controller.js"></script>
+    <script src="app/views/chat-room/autolinker.directive.js"></script>
+    <script src="app/views/chat-room/image-file-model.directive.js"></script>
+    <script src="app/views/chat-room/nl2br.filter.js"></script>
+    <script src="app/views/chat-room/image.service.js"></script>
+    <script src="app/views/chat-room/message.service.js"></script>
+    <script src="app/views/chat-room/setting.service.js"></script>
     <script src="app/views/account-setting/account.controller.js"></script>
   </head>
   <body ng-app="translate-chat">

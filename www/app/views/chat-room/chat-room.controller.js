@@ -3,32 +3,26 @@
  * @since 2016-04-23 20:50
  */
 
-/*globals Camera, FileUploadOptions, FileTransfer, Autolinker */
 (function () {
   'use strict';
 
-  // TODO 정리 할 것
   angular
     .module('translate-chat')
-    .controller('ChatRoomsCtrl', ChatRoomController)
-    .factory('SettingService', SettingService)
-    .factory('ImageFileUploader', ImageFileUploadService)
-    .factory('MessageService', MessageService)
-    .filter('nl2br', nl2brFilter)
-    .directive('imageFileModel', imageFileModel)
-    .directive('autolinker', autolinker);
+    .controller('ChatRoomCtrl', ChatRoomController);
 
   ChatRoomController.$inject = [
-    '$scope', '$rootScope', '$state', '$stateParams', 'MessageService', '$ionicActionSheet',
-    '$ionicScrollDelegate', '$timeout', 'ChatService', '$ionicModal',
-    '$ionicTabsDelegate', 'SocketService', 'UserService', '$ionicHistory', '_', 'SettingService',
-    '$cordovaToast', 'ImageFileUploader', '$cordovaCamera', 'md5', 'CONFIG'
+    '$scope', '$rootScope', '$state', '$stateParams', '$ionicActionSheet',
+    '$cordovaToast', '$ionicScrollDelegate', '$ionicModal', '$ionicTabsDelegate',
+    '$ionicHistory',
+    'ChatService', 'MessageService', 'UserService',
+    '_', 'SettingService', 'ImageService', 'CONFIG'
   ];
 
-  function ChatRoomController($scope, $rootScope, $state, $stateParams, MessageService, $ionicActionSheet,
-                              $ionicScrollDelegate, $timeout, ChatService, $ionicModal,
-                              $ionicTabsDelegate, SocketService, UserService, $ionicHistory, _, SettingService,
-                              $cordovaToast, ImageFileUploader, $cordovaCamera, md5, CONFIG) {
+  function ChatRoomController($scope, $rootScope, $state, $stateParams, $ionicActionSheet,
+                              $cordovaToast, $ionicScrollDelegate, $ionicModal, $ionicTabsDelegate,
+                              $ionicHistory,
+                              ChatService, MessageService, UserService,
+                              _, SettingService, ImageService, CONFIG) {
     var viewScroll = $ionicScrollDelegate.$getByHandle('userMessageScroll');
     var footerBar;
     var scroller;
@@ -37,6 +31,8 @@
     var isAndroid = ionic.Platform.isAndroid();
     var chatRoomId = $stateParams.chatRoomId;
     var backViewId = $stateParams.backViewId;
+
+    UserService.updateOnlineState(true);
 
     $ionicModal.fromTemplateUrl('app/views/chat-room/modal/show-image-modal.html', {
       scope : $scope,
@@ -54,14 +50,15 @@
 
     $scope.$on('$ionicView.beforeEnter', onBeforeEnter);
     $scope.$on('$ionicView.enter', onEnter);
-    $scope.$on('$ionicView.leave', onLeave);
     $scope.$on('$ionicView.beforeLeave', onBeforeLeave);
+    $scope.$on('$ionicView.leave', onLeave);
     $scope.$on('elastic:resize', onInputFormResize);
 
+    /** @prop {File} $scope.imageFile */
     $scope.showPictureSrc = null;
     $scope.showPicture = showPicture;
     $scope.hidePicture = hidePicture;
-    $scope.retrievePicture = retrievePicture;
+    $scope.retrievePicture = getPicture;
     $scope.translateSettingChange = translateSettingChange;
     $scope.showSetting = showSetting;
     $scope.hideSetting = hideSetting;
@@ -74,7 +71,9 @@
     $scope.user = UserService.get();
     $scope.toUser = ChatService.getToUserByChatRoomId(chatRoomId);
 
-    UserService.updateOnlineState(true);
+    $scope.input = {
+      message : ''
+    };
 
     $scope.settingsList = [{
       id : 'translate_ko',
@@ -98,63 +97,10 @@
       console.error('get settings list error : ', error);
     });
 
-    $scope.input = {
-      message : ''
-    };
-
-    var _seed = null;
-
-    function createUID(value) {
-      if (!_seed) {
-        _seed = new Date().getTime();
-      }
-      _seed++;
-
-      return md5.createHash(_seed + value);
-    }
+    MessageService.registerNewMessageCallback(onNewMessage);
 
     function keyboardPluginAvailable() {
       return window.cordova && window.cordova.plugins && window.cordova.plugins.Keyboard;
-    }
-
-    function keyboardShowHandler(event) {
-      keyboardHeight = event.keyboardHeight;
-
-      $rootScope.hideTabs = true;
-
-      $timeout(function () {
-        if (isAndroid) {
-          scroller.style.bottom = footerBar.clientHeight + 'px';
-        } else {
-          scroller.style.bottom = footerBar.clientHeight + keyboardHeight + 'px';
-        }
-        viewScroll.scrollBottom(false);
-      }, 0);
-    }
-
-    function keyboardHideHandler() {
-      keyboardHeight = 0;
-
-      $timeout(function () {
-        scroller.style.bottom = footerBar.clientHeight + 'px';
-        viewScroll.scrollBottom(false);
-      }, 0);
-    }
-
-    function keydownHandler(event) {
-      if (keyboardPluginAvailable()) {
-        cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
-      }
-      if (event.keyCode === 13) {
-        event.preventDefault();
-        event.stopPropagation();
-
-        if (txtInput.val().replace(/\s+/g, '') !== '') {
-          $scope.sendMessage();
-        } else {
-          txtInput.val('');
-        }
-      }
     }
 
     function getMessages() {
@@ -162,7 +108,7 @@
         $scope.doneLoading = true;
         $scope.messages = data;
 
-        $timeout(function () {
+        setTimeout(function () {
           viewScroll.scrollBottom(false);
         }, 0);
       }, function (error) {
@@ -171,13 +117,15 @@
     }
 
     function onBeforeEnter(event, viewData) {
+      console.debug('on before enter event : ', event);
+
       $ionicTabsDelegate.showBar(false);
       viewData.enableBack = true;
       var currentViewStateName = $ionicHistory.viewHistory().currentView.stateName;
       var backView = _.find($ionicHistory.viewHistory().views, function (view) {
         return view.viewId === backViewId;
       });
-      console.log('back view ', backView);
+
       if (backView && (currentViewStateName !== backView.stateName)) {
         $ionicHistory.backView(backView);
       } else {
@@ -188,34 +136,8 @@
     }
 
     function onEnter() {
-      SocketService.on('new_message', function (data) {
-        $scope.doneLoading = true;
-        if (data.error) {
-          console.error('new message receive error : ', data.error);
-        } else {
-          console.log('data.result : ', data.result);
-          var fromUserId = $scope.toUser.user_id;
-          if (data.result.user_name === $scope.user.user_name) {
-            fromUserId = $scope.user.user_id;
-          }
-
-          $scope.messages.push({
-            user_id : fromUserId,
-            created : new Date(),
-            text : data.result.text,
-            type : data.result.type
-          });
-
-          ChatService.updateLastText(chatRoomId, data.result.text);
-
-          $timeout(function () {
-            viewScroll.scrollBottom(false);
-          }, 0);
-        }
-      });
-
-      window.addEventListener('native.keyboardshow', keyboardShowHandler);
-      window.addEventListener('native.keyboardhide', keyboardHideHandler);
+      window.addEventListener('native.keyboardshow', onKeyboardShow);
+      window.addEventListener('native.keyboardhide', onKeyboardHide);
 
       if (keyboardPluginAvailable()) {
         cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
@@ -224,26 +146,27 @@
 
       getMessages();
 
-      $timeout(function () {
+      setTimeout(function () {
         footerBar = document.body.querySelector('#userMessagesView .bar-footer');
         scroller = document.body.querySelector('#userMessagesView .scroll-content');
         txtInput = angular.element(footerBar.querySelector('textarea'));
 
-        txtInput.on('keydown', keydownHandler);
+        txtInput.on('keydown', onKeydown);
       }, 0);
     }
 
     function onLeave() {
-      console.log('leaving UserMessages view, destroying interval');
+      console.debug('leaving UserMessages view, destroying interval');
 
-      window.removeEventListener('native.keyboardshow', keyboardShowHandler);
-      window.removeEventListener('native.keyboardhide', keyboardHideHandler);
+      window.removeEventListener('native.keyboardshow', onKeyboardShow);
+      window.removeEventListener('native.keyboardhide', onKeyboardHide);
 
       if (keyboardPluginAvailable()) {
         cordova.plugins.Keyboard.disableScroll(false);
       }
 
       UserService.updateOnlineState(false);
+      MessageService.removeNewMessageCallback(onNewMessage);
     }
 
     function onBeforeLeave() {
@@ -251,7 +174,7 @@
     }
 
     function showPicture(message) {
-      $scope.showPictureSrc = message.text;
+      $scope.showPictureSrc = $scope.imageUploadUrl + '/' + message.text;
       $scope.showPictureModal.show();
     }
 
@@ -260,98 +183,30 @@
       $scope.showPictureSrc = null;
     }
 
-    function retrievePicture(event) {
+    function getPicture(event) {
       event.preventDefault();
 
       if (ionic.Platform.isNativeBrowser) {
         var fileButton = document.querySelector('#image-file-picker');
         angular.element(fileButton).bind('change', function () {
           var imageFile = $scope.imageFile;
-          ImageFileUploader.uploadImageFileToUrl(imageFile, $scope.imageUploadUrl).then(function () {
-            var message = {
-              user_id : $scope.user.user_id,
-              created : new Date(),
-              user_name : $scope.user.user_name,
-              user_face : $scope.user.user_face,
-              type : 'image',
-              to_user : $scope.toUser,
-              text : imageFile.fileName
-            };
-
-            $scope.input.message = '';
-
-            $timeout(function () {
-              SocketService.emit('new_message', {
-                chat_room_id : chatRoomId,
-                type : message.type,
-                text : message.text,
-                user_id : message.user_id,
-                user_name : message.user_name,
-                to_user : message.to_user
-              });
-            }, 1);
-          }, function (error) {
-            console.error('upload image file to server error : ', error);
-          });
+          uploadImage(imageFile);
         });
         fileButton.click();
       } else {
-        var options = {
-          destinationType : Camera.DestinationType.NATIVE_URI,
-          sourceType : Camera.PictureSourceType.PHOTOLIBRARY,
-          encodingType : Camera.EncodingType.JPEG,
-          mediaType : Camera.MediaType.PICTURE,
-          saveToPhotoAlbum : false,
-          quality : 80,
-          correctOrientation : true
-        };
-
-        if (isAndroid) {
-          options.destinationType = Camera.DestinationType.FILE_URI;
-        }
-
-        $cordovaCamera.getPicture(options).then(function (imageData) {
-          $scope.imgURI = 'data:image/jpeg;base64,' + imageData;
-
-          var uploadOptions = new FileUploadOptions();
-          uploadOptions.fileKey = 'image';
-          uploadOptions.fileName = createUID(imageData.substr(imageData.lastIndexOf('/') + 1)) + '.jpg';
-          uploadOptions.mimeType = 'image/jpeg';
-          uploadOptions.chunkedMode = true;
-
-          var ft = new FileTransfer();
-          ft.upload(imageData, encodeURI($scope.imageUploadUrl), function () {
-            console.log('upload success : ', arguments);
-            var message = {
-              user_id : $scope.user.user_id,
-              created : new Date(),
-              user_name : $scope.user.user_name,
-              user_face : $scope.user.user_face,
-              type : 'image',
-              to_user : $scope.toUser,
-              text : uploadOptions.fileName
-            };
-
-            $scope.input.message = '';
-
-            $timeout(function () {
-              SocketService.emit('new_message', {
-                chat_room_id : chatRoomId,
-                type : message.type,
-                text : message.text,
-                user_id : message.user_id,
-                user_name : message.user_name,
-                to_user : message.to_user
-              });
-            }, 1);
-          }, function (error) {
-            console.error('upload error : ', error);
-          }, uploadOptions);
-        }, function (error) {
-          console.error('get picture error : ', error);
-          // An error occured. Show a message to the user
+        ImageService.loadPicture().then(function (imageFile) {
+          uploadImage(imageFile);
         });
       }
+    }
+
+    function uploadImage(imageFile) {
+      ImageService.uploadImageFileToUrl(imageFile, $scope.imageUploadUrl)
+        .then(function (imageFileName) {
+          sendMessage(imageFileName, 'image');
+        }, function (error) {
+          console.error('upload image file to url error : ', error);
+        });
     }
 
     function translateSettingChange() {
@@ -376,39 +231,88 @@
       $scope.settingModal.hide();
     }
 
-    function sendMessage() {
-      var message = {
-        user_id : $scope.user.user_id,
-        created : new Date(),
-        user_name : $scope.user.user_name,
-        user_face : $scope.user.user_face,
-        type : 'text',
-        to_user : $scope.toUser,
-        text : $scope.input.message
+    function sendMessage(text, type) {
+      var options = {
+        chat_room_id : chatRoomId,
+        type : type || 'text',
+        text : text || $scope.input.message,
+        user : $scope.user,
+        to_user : $scope.toUser
       };
-
+      MessageService.sendMessage(options);
       $scope.input.message = '';
+    }
 
-      $timeout(function () {
-        // $scope.messages.push(message);
-        viewScroll.scrollBottom(true);
+    function onNewMessage(data) {
+      $scope.doneLoading = true;
+      if (data.error) {
+        console.error('new message receive error : ', data);
+      } else {
+        var fromUserId = $scope.toUser.user_id;
+        if (data.result.user_name === $scope.user.user_name) {
+          fromUserId = $scope.user.user_id;
+        }
 
-        SocketService.emit('new_message', {
-          chat_room_id : chatRoomId,
-          type : message.type,
-          text : message.text,
-          user_id : message.user_id,
-          user_name : message.user_name,
-          to_user : message.to_user
+        $scope.messages.push({
+          user_id : fromUserId,
+          created : new Date(),
+          text : data.result.text,
+          type : data.result.type
         });
-      }, 500);
+
+        ChatService.updateLastText(chatRoomId, data.result.text);
+
+        setTimeout(function () {
+          viewScroll.scrollBottom(false);
+        }, 0);
+      }
+    }
+
+    function onKeyboardShow(event) {
+      keyboardHeight = event.keyboardHeight;
+
+      setTimeout(function () {
+        if (isAndroid) {
+          scroller.style.bottom = footerBar.clientHeight + 'px';
+        } else {
+          scroller.style.bottom = footerBar.clientHeight + keyboardHeight + 'px';
+        }
+        viewScroll.scrollBottom(false);
+      }, 0);
+    }
+
+    function onKeyboardHide() {
+      keyboardHeight = 0;
+
+      setTimeout(function () {
+        scroller.style.bottom = footerBar.clientHeight + 'px';
+        viewScroll.scrollBottom(false);
+      }, 0);
+    }
+
+    function onKeydown(event) {
+      if (keyboardPluginAvailable()) {
+        cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
+      }
+      if (event.keyCode === 13) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (txtInput.val().replace(/\s+/g, '') !== '') {
+          $scope.sendMessage();
+        } else {
+          txtInput.val('');
+        }
+      }
     }
 
     function onMessageHold(event, itemIndex, message) {
       event.preventDefault();
 
-      console.log('onMessageHold');
-      console.log('message: ' + JSON.stringify(message, null, 2));
+      console.info('on message hold item index : ', itemIndex);
+
+      console.debug('onMessageHold');
+      console.debug('message: ' + JSON.stringify(message, null, 2));
       $ionicActionSheet.show({
         buttons : [{
           text : 'Copy Text'
@@ -426,8 +330,10 @@
     }
 
     function onInputFormResize(event, element, oldHeight, newHeight) {
-      // do stuff
       event.preventDefault();
+
+      console.debug('input form resizer old height : ', oldHeight);
+      console.debug('input form resizer new height : ', newHeight);
 
       if (!element) {
         return;
@@ -451,174 +357,6 @@
       setTimeout(function () {
         viewScroll.scrollBottom(true);
       }, 50);
-    }
-  }
-
-  imageFileModel.$inject = ['$parse'];
-  function imageFileModel($parse) {
-    return {
-      restrict : 'A',
-      link : link
-    };
-
-    function link(scope, element, attrs) {
-      var model = $parse(attrs.imageFileModel);
-      var modelSetter = model.assign;
-
-      element.bind('change', function () {
-        console.log('file button change 0 ');
-        scope.$apply(function () {
-          modelSetter(scope, element[0].files[0]);
-        });
-      });
-    }
-  }
-
-  SettingService.$inject = ['$q', 'SocketService'];
-  function SettingService($q, SocketService) {
-    return {
-      updateTranslateSetting : updateTranslateSetting,
-      getSettingsList : getSettingsList
-    };
-
-    function updateTranslateSetting(userData) {
-      var deferred = $q.defer();
-
-      SocketService.emit('updateChatRoomSettingsTranslateKo', userData);
-      SocketService.on('updatedChatRoomSettingsTranslateKo', function (data) {
-        SocketService.removeListener('updatedChatRoomSettingsTranslateKo');
-
-        if (data.error) {
-          deferred.reject(data.error);
-        } else {
-          deferred.resolve(data.result);
-        }
-      });
-
-      return deferred.promise;
-    }
-
-    function getSettingsList(userData) {
-      var deferred = $q.defer();
-
-      SocketService.emit('retrieveChatRoomSettingsList', userData);
-      SocketService.on('retrievedChatRoomSettingsList', function (data) {
-        SocketService.removeListener('retrievedChatRoomSettingsList');
-
-        if (data.error) {
-          deferred.reject(data.error);
-        } else {
-          deferred.resolve(data.result);
-        }
-      });
-
-      return deferred.promise;
-    }
-  }
-
-  ImageFileUploadService.$inject = ['$q', '$http'];
-  function ImageFileUploadService($q, $http) {
-    return {
-      uploadImageFileToUrl : uploadImageFileToUrl
-    };
-
-    function uploadImageFileToUrl(imageFile, uploadUrl) {
-      var deferred = $q.defer();
-      var fd = new FormData();
-      fd.append('image', imageFile);
-
-      $http.post(uploadUrl, fd, {
-        transformRequest : angular.identity,
-        headers : {'Content-Type' : undefined}
-      }).success(function (res) {
-        console.log('success', res);
-        deferred.resolve(res);
-      }).error(function (error) {
-        console.error('image file upload error : ', error);
-        deferred.reject(error);
-      });
-
-      return deferred.promise;
-    }
-  }
-
-  MessageService.$inject = ['$q', 'SocketService'];
-  function MessageService($q, SocketService) {
-    return {
-      getUserMessages : getUserMessages
-    };
-
-    function getUserMessages(chatRoomId) {
-      var deferred = $q.defer();
-
-      SocketService.emit('retrieveAllChatMessagesByChatRoomId', {
-        chat_room_id : chatRoomId
-      });
-      SocketService.on('retrievedAllChatMessagesByChatRoomId', function (data) {
-        SocketService.removeListener('retrievedAllChatMessagesByChatRoomId');
-
-        if (data.error) {
-          deferred.reject(data.error);
-        } else {
-          deferred.resolve(data.result);
-        }
-      });
-
-      return deferred.promise;
-    }
-  }
-
-  function nl2brFilter() {
-    return function (data) {
-      if (!data) {
-        return data;
-      }
-      return data.replace(/\n\r?/g, '<br />');
-    };
-  }
-
-  autolinker.$inject = ['$timeout'];
-  function autolinker($timeout) {
-    return {
-      restrict : 'A',
-      link : link
-    };
-    function link(scope, element) {
-      $timeout(function () {
-        var eleHtml = element.html();
-
-        if (eleHtml === '') {
-          return false;
-        }
-
-        var text = Autolinker.link(eleHtml, {
-          className : 'autolinker',
-          newWindow : false
-        });
-
-        element.html(text);
-
-        var autolinks = element[0].getElementsByClassName('autolinker');
-        var autolinksLength = autolinks.length;
-        var i;
-
-        function onLinkClick(e) {
-          var href = e.target.href;
-          console.log('autolinkClick, href: ' + href);
-
-          if (href) {
-            //window.open(href, '_system');
-            window.open(href, '_blank');
-          }
-
-          e.preventDefault();
-          return false;
-        }
-
-        for (i = 0; i < autolinksLength; i++) {
-          angular.element(autolinks[i]).bind('click', onLinkClick);
-        }
-      }, 0);
     }
   }
 })();

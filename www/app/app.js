@@ -125,7 +125,7 @@
         views : {
           'tab-chat-room' : {
             templateUrl : 'app/views/chat-room/chat-room.html',
-            controller : 'ChatRoomsCtrl'
+            controller : 'ChatRoomCtrl'
           }
         }
       })
