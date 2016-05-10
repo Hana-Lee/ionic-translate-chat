@@ -96,7 +96,7 @@
         var viewId = $ionicHistory.viewHistory().currentView.viewId;
         $state.go('tab.chat-room', {
           chatRoomId : chatRoomId || result.chat_room_id,
-          backViewId : viewId
+          backViewId : viewId, reJoin : false
         });
       }, function (error) {
         console.log('joining chat room error : ', error);

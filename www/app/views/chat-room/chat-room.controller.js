@@ -31,6 +31,7 @@
     var isAndroid = ionic.Platform.isAndroid();
     var chatRoomId = $stateParams.chatRoomId;
     var backViewId = $stateParams.backViewId;
+    var reJoin = $stateParams.reJoin;
 
     UserService.updateOnlineState(true);
 
@@ -77,6 +78,10 @@
 
     $scope.settingsList = [];
 
+    if (reJoin === 'true') {
+      ChatService.joinChatRoom($scope.user, $scope.toUser, chatRoomId);
+    }
+
     SettingService.getSettingsList({
       user_id : $scope.user.user_id,
       chat_room_id : chatRoomId
@@ -86,7 +91,7 @@
         var type = setting.setting_type;
         var value;
         if (type.toLowerCase() === 'boolean') {
-          value = (setting.setting_value === 1);
+          value = (setting.setting_value === '1');
         } else {
           value = setting.setting_value;
         }

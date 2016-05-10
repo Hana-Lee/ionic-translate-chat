@@ -39,7 +39,7 @@
       var deferred = $q.defer();
 
       if (chatRoomId) {
-        _joinChatRoom(chatRoomId, user, friend).then(function () {
+        _joinChatRoom(user, friend, chatRoomId).then(function () {
           deferred.resolve(chatRoomId);
         });
       } else {

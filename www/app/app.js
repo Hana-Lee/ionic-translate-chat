@@ -40,16 +40,20 @@
             console.log('on notification', data);
             var payload = data.payload;
             var chatRoomId = payload.chat_room_id;
+            var user = UserService.get();
+            var friend = ChatService.getToUserByChatRoomId(chatRoomId);
             if ($state.current.name !== 'tab.chat-room') {
-              var user = UserService.get();
-              var friend = ChatService.getToUserByChatRoomId(chatRoomId);
               ChatService.joinChatRoom(user, friend, chatRoomId).then(function () {
                 /** @prop {Function} viewHistory */
                 var viewId = $ionicHistory.viewHistory().currentView.viewId;
-                $state.go('tab.chat-room', {chatRoomId : chatRoomId, backViewId : viewId});
+                $state.go('tab.chat-room', {
+                  chatRoomId : chatRoomId, backViewId : viewId, reJoin : false
+                });
               }, function (error) {
                 console.error('join chat room error : ', error);
               });
+            } else {
+              ChatService.joinChatRoom(user, friend, chatRoomId);
             }
           }
         });
@@ -121,7 +125,7 @@
         }
       })
       .state('tab.chat-room', {
-        url : '/room/:chatRoomId/:backViewId',
+        url : '/room/:chatRoomId/:backViewId/:reJoin',
         views : {
           'tab-chat-room' : {
             templateUrl : 'app/views/chat-room/chat-room.html',
