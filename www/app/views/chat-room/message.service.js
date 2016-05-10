@@ -45,7 +45,7 @@
         type : options.type,
         text : options.text,
         user : options.user,
-        to_user : options.toUser
+        to_user : options.to_user
       });
     }
 

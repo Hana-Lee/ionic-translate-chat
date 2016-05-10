@@ -14,16 +14,16 @@
 
   function SettingService($q, SocketService) {
     return {
-      updateTranslateSetting : updateTranslateSetting,
+      updateSettings : updateSettings,
       getSettingsList : getSettingsList
     };
 
-    function updateTranslateSetting(userData) {
+    function updateSettings(userData) {
       var deferred = $q.defer();
 
-      SocketService.emit('updateChatRoomSettingsTranslateKo', userData);
-      SocketService.on('updatedChatRoomSettingsTranslateKo', function (data) {
-        SocketService.removeListener('updatedChatRoomSettingsTranslateKo');
+      SocketService.emit('updateChatRoomSettings', userData);
+      SocketService.on('updatedChatRoomSettings', function (data) {
+        SocketService.removeListener('updatedChatRoomSettings');
 
         if (data.error) {
           deferred.reject(data.error);

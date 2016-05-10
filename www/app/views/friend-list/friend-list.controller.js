@@ -72,8 +72,8 @@
     function _initializeFriends(userData) {
       console.debug('initialize friends : ', $scope.friends);
       FriendService.getAll(userData).then(function (result) {
-        console.debug('initialize friends done : ', $scope.friends, result);
         $scope.friends = result;
+        console.debug('initialize friends done : ', $scope.friends, result);
       }, function (error) {
         console.error('get all friends error : ', error);
       });
@@ -91,9 +91,13 @@
       if (chatRoom) {
         chatRoomId = chatRoom.chat_room_id;
       }
+
       ChatService.joinChatRoom($scope.user, friend, chatRoomId).then(function (result) {
         var viewId = $ionicHistory.viewHistory().currentView.viewId;
-        $state.go('tab.chat-room', {chatRoomId : result.chat_room_id, backViewId : viewId});
+        $state.go('tab.chat-room', {
+          chatRoomId : chatRoomId || result.chat_room_id,
+          backViewId : viewId
+        });
       }, function (error) {
         console.log('joining chat room error : ', error);
       });

@@ -59,7 +59,7 @@
     $scope.showPicture = showPicture;
     $scope.hidePicture = hidePicture;
     $scope.retrievePicture = getPicture;
-    $scope.translateSettingChange = translateSettingChange;
+    $scope.translateSettingChange = updateSettings;
     $scope.showSetting = showSetting;
     $scope.hideSetting = hideSetting;
     $scope.sendMessage = sendMessage;
@@ -75,24 +75,27 @@
       message : ''
     };
 
-    $scope.settingsList = [{
-      id : 'translate_ko',
-      text : '한국어를 번역',
-      checked : false
-    }, {
-      id : 'show_picture',
-      text : '사진 보기',
-      checked : false
-    }];
+    $scope.settingsList = [];
 
     SettingService.getSettingsList({
       user_id : $scope.user.user_id,
       chat_room_id : chatRoomId
     }).then(function (result) {
-      if (result) {
-        $scope.settingsList[0].checked = result.translate_ko ? true : false;
-        $scope.settingsList[1].checked = result.show_picture ? true : false;
-      }
+      console.debug('get setting list result : ', result);
+      result.forEach(function (setting) {
+        var type = setting.setting_type;
+        var value;
+        if (type.toLowerCase() === 'boolean') {
+          value = (setting.setting_value === 1);
+        } else {
+          value = setting.setting_value;
+        }
+        $scope.settingsList.push({
+          key : setting.setting_key,
+          text : setting.setting_name,
+          value : value, type : type
+        });
+      });
     }, function (error) {
       console.error('get settings list error : ', error);
     });
@@ -209,14 +212,15 @@
         });
     }
 
-    function translateSettingChange() {
+    function updateSettings() {
       var params = {
-        translate_ko : $scope.settingsList[0].checked ? '1' : '0',
-        show_picture : null,
-        user_id : $scope.user.user_id,
+        settings : $scope.settingsList,
+        user : $scope.user,
         chat_room_id : chatRoomId
       };
-      SettingService.updateTranslateSetting(params).then(function () {
+
+      console.info('update settings : ', params);
+      SettingService.updateSettings(params).then(function () {
         if (!ionic.Platform.isNativeBrowser) {
           $cordovaToast.show('변경 완료', 'long', 'bottom');
         }
@@ -239,6 +243,7 @@
         user : $scope.user,
         to_user : $scope.toUser
       };
+      console.debug('send new message : ', options);
       MessageService.sendMessage(options);
       $scope.input.message = '';
     }

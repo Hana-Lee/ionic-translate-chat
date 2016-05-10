@@ -8,10 +8,12 @@
       <div class="item item-divider">
         번역 옵션
       </div>
-      <ion-toggle ng-repeat="item in settingsList"
-                  ng-model="item.checked"
-                  ng-checked="item.checked" ng-change="translateSettingChange()">
-        {{ item.text }}
+      <ion-toggle ng-repeat="setting in settingsList"
+                  id="{{setting.key}}"
+                  ng-model="setting.value"
+                  ng-checked="setting.value"
+                  ng-change="translateSettingChange()">
+        {{ setting.text }}
       </ion-toggle>
     </div>
   </ion-content>

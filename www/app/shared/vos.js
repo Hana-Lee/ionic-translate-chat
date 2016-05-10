@@ -22,4 +22,20 @@
     connection_time : null,
     created : null
   };
+
+  /**
+   * @typedef {Object} Setting
+   * @type {{id: null, text: null, value: null, type: null}}
+   */
+  var setting = {
+    setting_key : null,
+    setting_name : null,
+    setting_value : null,
+    setting_type : null
+  };
+
+  return {
+    userData : userData,
+    setting : setting
+  };
 }());

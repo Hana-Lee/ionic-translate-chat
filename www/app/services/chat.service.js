@@ -38,6 +38,59 @@
     function joinChatRoom(user, friend, chatRoomId) {
       var deferred = $q.defer();
 
+      if (chatRoomId) {
+        _joinChatRoom(chatRoomId, user, friend).then(function () {
+          deferred.resolve(chatRoomId);
+        });
+      } else {
+        _getChatRoomIdFromServer(user, friend).then(function (result) {
+          if (result) {
+            _joinChatRoom(user, friend, result.chat_room_id).then(function () {
+              deferred.resolve(result);
+            });
+          } else {
+            _createChatRoom(user, friend).then(function (result) {
+              _joinChatRoom(user, friend, result.chat_room_id).then(function () {
+                deferred.resolve(result);
+              });
+            });
+          }
+        });
+      }
+
+      return deferred.promise;
+    }
+
+    function _getChatRoomIdFromServer(user, friend) {
+      var deferred = $q.defer();
+
+      console.debug('get chat room id');
+      SocketService.emit('retrieveChatRoomId', {
+        user : user, to_user : friend
+      });
+      SocketService.on('retrievedChatRoomId', function (data) {
+        SocketService.removeListener('retrievedChatRoomId');
+
+        if (data.error) {
+          deferred.reject(data);
+        } else if (data.result) {
+          console.info('chat room id : ', data);
+          chatRoomList.push({
+            user : user,
+            to_user : friend,
+            chat_room_id : data.result.chat_room_id,
+            last_text : ''
+          });
+        }
+        deferred.resolve(data.result);
+      });
+
+      return deferred.promise;
+    }
+
+    function _joinChatRoom(user, friend, chatRoomId) {
+      var deferred = $q.defer();
+
       SocketService.emit('joinChatRoom', {
         chat_room_id : chatRoomId,
         user : user,
@@ -49,16 +102,33 @@
         if (data.error) {
           deferred.reject(data);
         } else {
-          var chat = {
+          deferred.resolve(data.result);
+        }
+      });
+
+      return deferred.promise;
+    }
+
+    function _createChatRoom(user, friend) {
+      var deferred = $q.defer();
+
+      SocketService.emit('createChatRoom', {
+        user : user, to_user : friend
+      });
+      SocketService.on('createdChatRoom', function (data) {
+        SocketService.removeListener('createdChatRoom');
+
+        if (data.error) {
+          deferred.reject(data);
+        } else {
+          chatRoomList.push({
+            user : user,
             to_user : friend,
             chat_room_id : data.result.chat_room_id,
             last_text : ''
-          };
+          });
 
-          if (!chatRoomId) {
-            chatRoomList.push(chat);
-            _saveLocalStorage();
-          }
+          _saveLocalStorage();
 
           deferred.resolve(data.result);
         }
@@ -68,6 +138,7 @@
     }
 
     function getToUserByChatRoomId(chatRoomId) {
+      console.debug('get to user by chat room id : ', chatRoomId, chatRoomList);
       var chatRoom = _.find(chatRoomList, function (chatRoom) {
         return chatRoom.chat_room_id === chatRoomId;
       });
@@ -93,11 +164,12 @@
             if (data.error) {
               deferred.reject(data);
             } else if (data.result && data.result.length > 0) {
-              data.result.forEach(function (/** @prop {String} r.friend_id */r) {
+              data.result.forEach(function (/** @prop {String} r.to_user_id */r) {
                 var friend = _.find(result, function (f) {
                   return r.to_user_id === f.user_id;
                 });
                 chatRoomList.push({
+                  user : userData,
                   to_user : friend,
                   chat_room_id : r.chat_room_id,
                   last_text : r.last_text
