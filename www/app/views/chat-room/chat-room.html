@@ -32,7 +32,8 @@
           <div ng-if="message.type === 'image'" class="message">
             <img ng-src="{{imageUploadUrl}}/{{message.text}}" ng-click="showPicture(message)">
           </div>
-          <div ng-if="message.type === 'text'" class="message" ng-bind-html="message.text | nl2br" autolinker></div>
+          <!--<audio src="http://api.microsofttranslator.com/V2/http.svc/Speak?appId=Bearer+http%253a%252f%252fschemas.xmlsoap.org%252fws%252f2005%252f05%252fidentity%252fclaims%252fnameidentifier%3d4a9502ef6d79670c619b62d353d66fd5%26http%253a%252f%252fschemas.microsoft.com%252faccesscontrolservice%252f2010%252f07%252fclaims%252fidentityprovider%3dhttps%253a%252f%252fdatamarket.accesscontrol.windows.net%252f%26Audience%3dhttp%253a%252f%252fapi.microsofttranslator.com%26ExpiresOn%3d1462956624%26Issuer%3dhttps%253a%252f%252fdatamarket.accesscontrol.windows.net%252f%26HMACSHA256%3dAhI%252b2zi2xWNlPrg4JrkIQxF%252fwLcLcVHBv9MaCOBVFcc%253d&text=Te+amo&language=es&format=audio%2fmp3"></audio>-->
+          <div ng-if="message.type === 'text'" class="message button-icon" ng-bind-html="message.text | nl2br" autolinker ng-click="playAudio(message.id)"></div>
           <div class="message-detail">
             <span class="bold">{{user.user_name}}</span>,
             <span am-time-ago="message.created"></span>

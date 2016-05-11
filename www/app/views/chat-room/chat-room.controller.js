@@ -65,6 +65,7 @@
     $scope.hideSetting = hideSetting;
     $scope.sendMessage = sendMessage;
     $scope.onMessageHold = onMessageHold;
+    $scope.playAudio = playAudio;
 
     $scope.imageUploadUrl = CONFIG.serverUrl + ':' + CONFIG.serverPort + '/api/image';
 
@@ -238,6 +239,10 @@
 
     function hideSetting() {
       $scope.settingModal.hide();
+    }
+    
+    function playAudio() {
+      
     }
 
     function sendMessage(text, type) {
