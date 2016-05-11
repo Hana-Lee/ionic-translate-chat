@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/Hana-Lee/ionic-translate-chat.png?label=ready&title=Ready)](https://waffle.io/Hana-Lee/ionic-translate-chat)
 # ionic-translate-chat
 Translate chat client with ionic framework
 
