@@ -11,10 +11,12 @@
     .controller('ChatsCtrl', ChatListController);
 
   ChatListController.$inject = [
-    '$scope', 'ChatService', 'UserService', '$state', '$ionicHistory', '$ionicTabsDelegate'
+    '$scope', '$state', '$ionicHistory', '$ionicTabsDelegate',
+    'ChatService', 'UserService', 'SocketService', '_'
   ];
 
-  function ChatListController($scope, ChatService, UserService, $state, $ionicHistory, $ionicTabsDelegate) {
+  function ChatListController($scope, $state, $ionicHistory, $ionicTabsDelegate,
+                              ChatService, UserService, SocketService, _) {
     $scope.chats = [];
     $scope.user = UserService.get();
 
@@ -22,7 +24,15 @@
     $scope.$on('$ionicView.beforeEnter', onBeforeEnter);
 
     $scope.joinChatRoom = joinChatRoom;
-    $scope.remove = remove;
+    $scope.removeChatRoom = removeChatRoom;
+
+    SocketService.on('toUserDeletedChatRoom', function (data) {
+      var chatRoomId = data.result.chat_room_id;
+      var chat = _.find($scope.chats, function (chat) {
+        return chat.chat_room_id === chatRoomId;
+      });
+      $scope.chats = ChatService.removeChatRoomOnLocal(chat);
+    });
 
     function onEnter() {
       ChatService.getAllRoom($scope.user).then(function (result) {
@@ -43,8 +53,10 @@
       });
     }
 
-    function remove(chat) {
-      ChatService.remove(chat);
+    function removeChatRoom(chat) {
+      ChatService.removeChatRoom(chat).then(function (chatRoomList) {
+        $scope.chats = chatRoomList;
+      });
     }
   }
 })();
