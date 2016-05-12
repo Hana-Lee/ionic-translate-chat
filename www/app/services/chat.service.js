@@ -26,7 +26,9 @@
       joinChatRoom : joinChatRoom,
       getToUserByChatRoomId : getToUserByChatRoomId,
       getAllRoom : getAllRoom,
-      updateLastText : updateLastText
+      updateLastText : updateLastText,
+      removeChatRoom : removeChatRoom,
+      removeChatRoomOnLocal : removeChatRoomOnLocal
     };
 
     function getChatRoom(friend) {
@@ -128,7 +130,7 @@
             last_text : ''
           });
 
-          _saveLocalStorage();
+          _saveToLocalStorage();
 
           deferred.resolve(data.result);
         }
@@ -175,11 +177,11 @@
                   last_text : r.last_text
                 });
               });
-              _saveLocalStorage();
+              _saveToLocalStorage();
               deferred.resolve(chatRoomList);
             } else {
               chatRoomList = [];
-              _saveLocalStorage();
+              _saveToLocalStorage();
               deferred.resolve(chatRoomList);
             }
           });
@@ -200,11 +202,44 @@
 
       chatRoom.last_text = text;
 
-      _saveLocalStorage();
+      _saveToLocalStorage();
     }
 
-    function _saveLocalStorage() {
+    function _saveToLocalStorage() {
       localStorage.setItem(STORAGE_KEYS.CHATS, JSON.stringify(chatRoomList));
+    }
+
+    function removeChatRoom(chat) {
+      var deferred = $q.defer();
+
+      SocketService.emit('deleteChatRoom', {
+        chat_room_id : chat.chat_room_id,
+        to_user : chat.to_user
+      });
+      SocketService.on('deletedChatRoom', function (data) {
+        SocketService.removeListener('deletedChatRoom');
+
+        if (data.error) {
+          deferred.reject(data);
+        } else {
+          removeChatRoomOnLocal(chat);
+
+          deferred.resolve(chatRoomList);
+        }
+      });
+
+      return deferred.promise;
+    }
+
+    function removeChatRoomOnLocal(chat) {
+      chatRoomList.forEach(function (chatRoom, idx) {
+        if (chatRoom.chat_room_id === chat.chat_room_id) {
+          chatRoomList.splice(idx, 1);
+        }
+      });
+      _saveToLocalStorage();
+
+      return chatRoomList;
     }
   }
 
