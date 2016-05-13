@@ -1,6 +1,6 @@
 {
   "name": "ionic-translate-chat",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "ionic-translate-chat: An Ionic project",
   "dependencies": {
     "gulp": "^3.5.6",
