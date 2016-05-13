@@ -166,16 +166,19 @@
             if (data.error) {
               deferred.reject(data);
             } else if (data.result && data.result.length > 0) {
+              console.info('chat room result : ', data.result);
               data.result.forEach(function (/** @prop {String} r.to_user_id */r) {
-                var friend = _.find(result, function (f) {
-                  return r.to_user_id === f.user_id;
-                });
-                chatRoomList.push({
-                  user : userData,
-                  to_user : friend,
-                  chat_room_id : r.chat_room_id,
-                  last_text : r.last_text
-                });
+                if (r.chat_room_id) {
+                  var friend = _.find(result, function (f) {
+                    return r.to_user_id === f.user_id;
+                  });
+                  chatRoomList.push({
+                    user : userData,
+                    to_user : friend,
+                    chat_room_id : r.chat_room_id,
+                    last_text : r.last_text
+                  });
+                }
               });
               _saveToLocalStorage();
               deferred.resolve(chatRoomList);
