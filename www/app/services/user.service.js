@@ -24,7 +24,8 @@
       get : get,
       createUser : createUser,
       getAll : getAll,
-      updateOnlineState : updateOnlineState
+      updateOnlineState : updateOnlineState,
+      updateUserName : updateUserName
     };
 
     function get() {
@@ -99,9 +100,13 @@
     }
 
     function _createUserOnLocal(userData) {
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
-      currentUser = userData;
+      _saveUserOnLocalStorage(userData);
       SocketService.emit('updateSocketId', {user_id : currentUser.user_id});
+    }
+
+    function _saveUserOnLocalStorage(userData) {
+      currentUser = userData;
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
     }
 
     function _getUserByUserNameFromServer(userData) {
@@ -146,6 +151,24 @@
         online : state ? 1 : 0
       };
       SocketService.emit('updateUserOnlineState', params);
+    }
+
+    function updateUserName(userData) {
+      var deferred = $q.defer();
+
+      SocketService.emit('updateUserName', {user : userData});
+      SocketService.on('updatedUserName', function (data) {
+        SocketService.removeListener('updatedUserName');
+
+        if (data.error) {
+          deferred.reject(data);
+        } else {
+          _saveUserOnLocalStorage(userData);
+          deferred.resolve(data.result);
+        }
+      });
+
+      return deferred.promise;
     }
   }
 
