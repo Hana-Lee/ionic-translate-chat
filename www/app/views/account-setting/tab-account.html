@@ -1,10 +1,28 @@
 <ion-view view-title="설정">
   <ion-content>
     <ion-list show-delete="shouldShowDelete">
+      <div class="item item-button-right user-name-editor">
+        <img ng-click="showUserFace()" class="profile-pic left"
+             ng-src="{{user.user_face}}" />
+        <input title="user name editor" type="text"
+               ng-class="{edit:!userNameViewOnly}"
+               ng-readonly="userNameViewOnly"
+               class="name"
+               ng-model="user.user_name">
+        <button ng-if="userNameViewOnly" class="button button-positive" ng-click="editUserName()">
+          <i class="icon ion-ios-compose-outline"></i>
+        </button>
+        <button ng-if="!userNameViewOnly" class="button button-calm" ng-click="updateUserName()">
+          <i class="icon ion-ios-checkmark-outline"></i>
+        </button>
+      </div>
+      <div class="item item-divider">
+        기타
+      </div>
       <div class="item item-button-right">
         로컬 데이터 삭제
         <button class="button button-assertive" ng-click="showDeleteConfirm()">
-          <i class="icon ion-android-delete"></i>
+          <i class="icon ion-ios-trash-outline"></i>
         </button>
       </div>
     </ion-list>

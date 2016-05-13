@@ -18,11 +18,15 @@
     $scope.user = UserService.get();
     $scope.settings = {
     };
+    $scope.userNameViewOnly = true;
 
     $scope.$on('$ionicView.enter', onEnter);
     $scope.$on('$ionicView.beforeEnter', onBeforeEnter);
 
+    $scope.showUserFace = showUserFace;
     $scope.showDeleteConfirm = showDeleteConfirm;
+    $scope.editUserName = editUserName;
+    $scope.updateUserName = updateUserName;
 
     function onEnter() {
       console.log('account view enter');
@@ -30,6 +34,19 @@
 
     function onBeforeEnter() {
       $ionicTabsDelegate.showBar(true);
+    }
+
+    function showUserFace() {
+
+    }
+
+    function editUserName() {
+      $scope.userNameViewOnly = false;
+    }
+
+    function updateUserName() {
+      $scope.userNameViewOnly = true;
+      UserService.updateUserName($scope.user);
     }
 
     function showDeleteConfirm() {
