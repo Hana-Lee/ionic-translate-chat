@@ -23,13 +23,14 @@
     $scope.$on('$ionicView.beforeEnter', onBeforeEnter);
     $scope.$on('$ionicView.enter', onEnter);
 
-    $scope.remove = remove;
+    $scope.removeFriend = removeFriend;
     $scope.showUsers = showUsers;
     $scope.hideUserListModal = hideUserListModal;
     $scope.addFriend = addFriend;
     $scope.joinChatRoom = joinChatRoom;
 
     SocketService.on('addedFriend', onAddedFriend);
+    SocketService.on('friendDeletedYou', onFriendDeletedYou);
 
     $ionicModal.fromTemplateUrl('app/views/friend-list/modal/user-list-modal.html', {
       scope : $scope,
@@ -38,8 +39,10 @@
       $scope.userListModal = userListModal;
     });
 
-    function remove(friend) {
-      console.log('remove friend : ', friend);
+    function removeFriend(friend) {
+      FriendService.remove($scope.user, friend).then(function (friends) {
+        $scope.friends = friends;
+      });
     }
 
     function showUsers() {
@@ -80,9 +83,7 @@
     }
 
     function onEnter() {
-      if ($scope.friends.length === 0) {
-        _initializeFriends($scope.user);
-      }
+      _initializeFriends($scope.user);
     }
 
     function joinChatRoom(friend) {
@@ -110,6 +111,19 @@
         console.log('added friend : ', data.result, $scope.friends);
         addFriend(data.result, false);
       }
+    }
+
+    function onFriendDeletedYou(data) {
+      var deletedFriendId = data.result;
+      _deleteFriendOnLocal(deletedFriendId);
+    }
+
+    function _deleteFriendOnLocal(friendId) {
+      $scope.friends.forEach(function (friend, idx) {
+        if (friend.user_id === friendId) {
+          $scope.friends.splice(idx, 1);
+        }
+      });
     }
   }
 })();

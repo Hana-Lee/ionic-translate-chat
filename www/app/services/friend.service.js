@@ -14,7 +14,8 @@
   function FriendService($q, SocketService) {
     return {
       add : add,
-      getAll : getAll
+      getAll : getAll,
+      remove : remove
     };
 
     function add(user, friend, doNotification) {
@@ -41,6 +42,22 @@
       SocketService.emit('retrieveAllFriends', userData);
       SocketService.on('retrievedAllFriends', function (data) {
         SocketService.removeListener('retrievedAllFriends');
+
+        if (data.error) {
+          deferred.reject(data);
+        } else {
+          deferred.resolve(data.result);
+        }
+      });
+
+      return deferred.promise;
+    }
+
+    function remove(user, friend) {
+      var deferred = $q.defer();
+      SocketService.emit('deleteFriend', {user : user, friend : friend});
+      SocketService.on('deletedFriend', function (data) {
+        SocketService.removeListener('deletedFriend');
 
         if (data.error) {
           deferred.reject(data);
