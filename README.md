@@ -4,4 +4,4 @@ Translate chat client with ionic framework
 
 ## 스크린샷(Screenshot)
 
-![스크린샷](https://raw.githubusercontent.com/Hana-Lee/ionic-translate-chat/master/resources/screenshot/chat-screen-1.png)
+![스크린샷](https://raw.githubusercontent.com/Hana-Lee/ionic-translate-chat/master/resources/screenshot/chat-screenshot.png)
