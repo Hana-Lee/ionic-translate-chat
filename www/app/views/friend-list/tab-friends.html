@@ -10,7 +10,7 @@
         <h2>{{friend.user_name}}</h2>
         <span data-id="{{friend.user_id}}" class="hide"></span>
         <span>마지막접속 : </span><span am-time-ago="friend.connection_time"></span>
-        <ion-option-button class="button-assertive" ng-click="remove(friend)">
+        <ion-option-button class="button-assertive" ng-click="removeFriend(friend)">
           삭제
         </ion-option-button>
       </ion-item>
