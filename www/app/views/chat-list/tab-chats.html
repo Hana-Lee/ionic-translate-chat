@@ -4,7 +4,8 @@
       <ion-item class="item-remove-animate item-avatar item-icon-right item-text-wrap"
                 ng-repeat="chat in chats"
                 ng-click="joinChatRoom(chat)">
-        <img ng-src="{{chat.to_user.user_face}}">
+        <img ng-if="chat.to_user.user_face === 'assets/img/sarah.png'" ng-src="{{chat.to_user.user_face}}">
+        <img ng-if="chat.to_user.user_face !== 'assets/img/sarah.png'" ng-src="{{imageServerUrl}}/{{chat.to_user.user_face}}">
         <h2>{{chat.to_user.user_name}}</h2>
         <p>마지막 메세지 : {{chat.last_text}}</p>
         <i class="icon ion-chevron-right icon-accessory"></i>

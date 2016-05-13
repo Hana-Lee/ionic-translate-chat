@@ -12,13 +12,14 @@
 
   ChatListController.$inject = [
     '$scope', '$state', '$ionicHistory', '$ionicTabsDelegate',
-    'ChatService', 'UserService', 'SocketService', '_'
+    'ChatService', 'UserService', 'SocketService', '_', 'ImageService'
   ];
 
   function ChatListController($scope, $state, $ionicHistory, $ionicTabsDelegate,
-                              ChatService, UserService, SocketService, _) {
+                              ChatService, UserService, SocketService, _, ImageService) {
     $scope.chats = [];
     $scope.user = UserService.get();
+    $scope.imageServerUrl = ImageService.getServerUrl();
 
     $scope.$on('$ionicView.enter', onEnter);
     $scope.$on('$ionicView.beforeEnter', onBeforeEnter);
