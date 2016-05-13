@@ -3,7 +3,7 @@
     <ion-list show-delete="shouldShowDelete">
       <div class="item item-button-right user-name-editor">
         <img ng-click="showUserFace()" class="profile-pic left"
-             ng-src="{{user.user_face}}" />
+             ng-src="{{userFaceUrl}}"/>
         <input title="user name editor" type="text"
                ng-class="{edit:!userNameViewOnly}"
                ng-readonly="userNameViewOnly"
@@ -16,6 +16,9 @@
           <i class="icon ion-ios-checkmark-outline"></i>
         </button>
       </div>
+      <div class="item change-user-face row-no-padding">
+        <button class="button button-full" ng-click="changeUserFace($event)">프로필 사진 변경</button>
+      </div>
       <div class="item item-divider">
         기타
       </div>
@@ -27,4 +30,5 @@
       </div>
     </ion-list>
   </ion-content>
+  <input id="image-file-picker" name="image" type="file" class="hide" accept="image/*" image-file-model="imageFile"/>
 </ion-view>

@@ -32,6 +32,7 @@
     var chatRoomId = $stateParams.chatRoomId;
     var backViewId = $stateParams.backViewId;
     var reJoin = $stateParams.reJoin;
+    var isNativeBrowser = ionic.Platform.isNativeBrowser;
 
     UserService.updateOnlineState(true);
 
@@ -67,7 +68,7 @@
     $scope.onMessageHold = onMessageHold;
     $scope.playAudio = playAudio;
 
-    $scope.imageUploadUrl = CONFIG.serverUrl + ':' + CONFIG.serverPort + '/api/image';
+    $scope.imageUploadUrl = ImageService.getServerUrl();
 
     $scope.messages = [];
     $scope.user = UserService.get();
@@ -89,18 +90,20 @@
     }).then(function (result) {
       console.debug('get setting list result : ', result);
       result.forEach(function (setting) {
-        var type = setting.setting_type;
-        var value;
-        if (type.toLowerCase() === 'boolean') {
-          value = (setting.setting_value === '1');
-        } else {
-          value = setting.setting_value;
+        if (setting.setting_key === 'translate_ko') {
+          var type = setting.setting_type;
+          var value;
+          if (type.toLowerCase() === 'boolean') {
+            value = (setting.setting_value === '1');
+          } else {
+            value = setting.setting_value;
+          }
+          $scope.settingsList.push({
+            key : setting.setting_key,
+            text : setting.setting_name,
+            value : value, type : type
+          });
         }
-        $scope.settingsList.push({
-          key : setting.setting_key,
-          text : setting.setting_name,
-          value : value, type : type
-        });
       });
     }, function (error) {
       console.error('get settings list error : ', error);
@@ -199,6 +202,7 @@
         var fileButton = document.querySelector('#image-file-picker');
         angular.element(fileButton).bind('change', function () {
           var imageFile = $scope.imageFile;
+          console.log('image : ', imageFile);
           uploadImage(imageFile);
         });
         fileButton.click();
@@ -210,7 +214,7 @@
     }
 
     function uploadImage(imageFile) {
-      ImageService.uploadImageFileToUrl(imageFile, $scope.imageUploadUrl)
+      ImageService.uploadImageFileToUrl(imageFile, isNativeBrowser)
         .then(function (imageFileName) {
           sendMessage(imageFileName, 'image');
         }, function (error) {
@@ -240,9 +244,9 @@
     function hideSetting() {
       $scope.settingModal.hide();
     }
-    
+
     function playAudio() {
-      
+
     }
 
     function sendMessage(text, type) {

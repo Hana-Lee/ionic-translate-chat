@@ -304,3 +304,11 @@ a.autolinker {
 .user-name-editor .button {
   margin-top: 12px;
 }
+
+.change-user-face button {
+  text-align: left;
+  color: dodgerblue;
+  background: transparent;
+  margin-top: 3px;
+  margin-bottom: 3px;
+}

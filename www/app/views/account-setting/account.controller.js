@@ -11,14 +11,15 @@
     .controller('AccountCtrl', AccountController);
 
   AccountController.$inject = [
-    '$scope', '$state', '$ionicTabsDelegate', '$ionicPopup', 'UserService'
+    '$scope', '$state', '$ionicTabsDelegate', '$ionicPopup', 'UserService', 'ImageService'
   ];
 
-  function AccountController($scope, $state, $ionicTabsDelegate, $ionicPopup, UserService) {
+  function AccountController($scope, $state, $ionicTabsDelegate, $ionicPopup, UserService, ImageService) {
     $scope.user = UserService.get();
-    $scope.settings = {
-    };
+    $scope.settings = {};
     $scope.userNameViewOnly = true;
+    var imageUploadUrl = ImageService.getServerUrl();
+    $scope.userFaceUrl = '';
 
     $scope.$on('$ionicView.enter', onEnter);
     $scope.$on('$ionicView.beforeEnter', onBeforeEnter);
@@ -27,6 +28,7 @@
     $scope.showDeleteConfirm = showDeleteConfirm;
     $scope.editUserName = editUserName;
     $scope.updateUserName = updateUserName;
+    $scope.changeUserFace = changeUserFace;
 
     function onEnter() {
       console.log('account view enter');
@@ -34,6 +36,7 @@
 
     function onBeforeEnter() {
       $ionicTabsDelegate.showBar(true);
+      _changeUserFaceValue();
     }
 
     function showUserFace() {
@@ -66,6 +69,42 @@
       localStorage.clear();
       console.info('local storage data clear complete');
       $state.go('user-name');
+    }
+
+    function changeUserFace(event) {
+      event.preventDefault();
+
+      if (ionic.Platform.isNativeBrowser) {
+        var fileButton = document.querySelector('#image-file-picker');
+        angular.element(fileButton).bind('change', function () {
+          var imageFile = $scope.imageFile;
+          _uploadImage(imageFile);
+        });
+        fileButton.click();
+      } else {
+        ImageService.loadPicture().then(function (imageFile) {
+          _uploadImage(imageFile);
+        });
+      }
+    }
+
+    function _uploadImage(imageFile) {
+      var isNativeBrowser = ionic.Platform.isNativeBrowser;
+
+      ImageService.uploadImageFileToUrl(imageFile, isNativeBrowser)
+        .then(function (imageFileName) {
+          console.info('upload user face complete : ', imageFileName);
+          $scope.user.user_face = imageFileName;
+          _changeUserFaceValue();
+          UserService.updateUserFace($scope.user);
+        }, function (error) {
+          console.error('upload image file to url error : ', error);
+        });
+    }
+
+    function _changeUserFaceValue() {
+      var userFace = $scope.user.user_face;
+      $scope.userFaceUrl = (userFace === 'assets/img/sarah.png') ? userFace : imageUploadUrl + '/' + userFace;
     }
   }
 })();
