@@ -25,7 +25,8 @@
       createUser : createUser,
       getAll : getAll,
       updateOnlineState : updateOnlineState,
-      updateUserName : updateUserName
+      updateUserName : updateUserName,
+      updateUserFace : updateUserFace
     };
 
     function get() {
@@ -159,6 +160,24 @@
       SocketService.emit('updateUserName', {user : userData});
       SocketService.on('updatedUserName', function (data) {
         SocketService.removeListener('updatedUserName');
+
+        if (data.error) {
+          deferred.reject(data);
+        } else {
+          _saveUserOnLocalStorage(userData);
+          deferred.resolve(data.result);
+        }
+      });
+
+      return deferred.promise;
+    }
+
+    function updateUserFace(userData) {
+      var deferred = $q.defer();
+
+      SocketService.emit('updateUserFace', {user : userData});
+      SocketService.on('updatedUserFace', function (data) {
+        SocketService.removeListener('updatedUserFace');
 
         if (data.error) {
           deferred.reject(data);

@@ -12,13 +12,14 @@
 
   FriendListController.$inject = [
     '$scope', '$ionicTabsDelegate', '$state', '$ionicHistory', '$ionicModal',
-    'UserService', 'ChatService', 'SocketService', 'FriendService'
+    'UserService', 'ChatService', 'SocketService', 'FriendService', 'ImageService'
   ];
   function FriendListController($scope, $ionicTabsDelegate, $state, $ionicHistory, $ionicModal,
-                                UserService, ChatService, SocketService, FriendService) {
+                                UserService, ChatService, SocketService, FriendService, ImageService) {
     $scope.friends = [];
     $scope.users = [];
     $scope.user = UserService.get();
+    $scope.imageServerUrl = ImageService.getServerUrl();
 
     $scope.$on('$ionicView.beforeEnter', onBeforeEnter);
     $scope.$on('$ionicView.enter', onEnter);
